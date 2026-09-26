@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pianobar passes the event name as its sole argument and details on stdin.
+exec python3 "$(dirname "$0")/bridge.py" event "$1"
