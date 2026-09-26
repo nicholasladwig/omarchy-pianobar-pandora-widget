@@ -8,7 +8,7 @@ Play Pandora from the Omarchy Quattro bar, the current Waybar-style bar in Omarc
 omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-widget.git --enable
 ```
 
-The plugin requires `pianobar`, `python3`, `tmux`, and `secret-tool`. On Omarchy, use `omarchy pkg add pianobar python tmux libsecret` for missing packages.
+The plugin requires the Omarchy packages `pianobar`, `python`, `tmux`, and `libsecret` (which provides `secret-tool`). Install any missing dependencies before setup; the plugin does not install software.
 
 If you installed an earlier version:
 
