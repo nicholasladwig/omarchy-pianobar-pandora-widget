@@ -69,7 +69,7 @@ BarWidget {
 
   Timer {
     interval: 350
-    running: root.trackText.length > 28
+    running: root.trackText.length > 24
     repeat: true
     onTriggered: root.tickerOffset = (root.tickerOffset + 1) % (root.trackText.length + 5)
   }
@@ -83,23 +83,31 @@ BarWidget {
 
   Process {
     id: statusProcess
-    stdout: StdioCollector { waitForEnd: true; onStreamFinished: function(data) {
-      try { root.player = JSON.parse(data || "{}") } catch (e) { root.player = ({}) }
-    } }
+    stdout: StdioCollector { id: statusOutput; waitForEnd: true }
+    onExited: function(exitCode) {
+      try { root.player = exitCode === 0 ? JSON.parse(String(statusOutput.text || "{}")) : ({}) }
+      catch (e) { root.player = ({}) }
+    }
   }
 
   Process {
     id: accountProcess
     stdinEnabled: true
     onStarted: { write(root.accountPayload); root.accountPayload = "" }
-    stderr: StdioCollector { waitForEnd: true; onStreamFinished: function(data) { if (data.trim()) root.errorText = data.trim() } }
-    onExited: root.refresh()
+    stderr: StdioCollector { id: accountError; waitForEnd: true }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) root.errorText = String(accountError.text || "Could not save account").trim()
+      root.refresh()
+    }
   }
 
   Process {
     id: controlProcess
-    stderr: StdioCollector { waitForEnd: true; onStreamFinished: function(data) { if (data.trim()) root.errorText = data.trim() } }
-    onExited: root.refresh()
+    stderr: StdioCollector { id: controlError; waitForEnd: true }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) root.errorText = String(controlError.text || "Pianobar command failed").trim()
+      root.refresh()
+    }
   }
 
   Loader {
