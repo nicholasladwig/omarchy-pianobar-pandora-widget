@@ -38,11 +38,14 @@ def event(name):
         if f"titleNext{i}" not in data:
             break
         upcoming.append({"title": data.get(f"titleNext{i}", ""), "artist": data.get(f"artistNext{i}", ""), "album": data.get(f"albumNext{i}", "")})
-    has_song = bool(data.get("title")) and name != "songfinish"
-    if name == "songfinish" and previous.get("title") == data.get("title"):
-        has_song = False
-    if name in ("userlogin", "usergetstations") and not data.get("title"):
-        has_song = bool(previous.get("title"))
+    # Only playback transitions clear the current song. Administrative events
+    # often have no song payload and must leave the displayed track intact.
+    if name == "songfinish":
+        has_song = bool(previous.get("title")) and previous.get("title") != data.get("title")
+    elif name in ("songstart", "stationfetchplaylist"):
+        has_song = bool(data.get("title"))
+    else:
+        has_song = bool(data.get("title") or previous.get("title"))
     result = {
         "station": data.get("stationName") or previous.get("station", ""),
         "stations": stations,
