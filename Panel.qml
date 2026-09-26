@@ -15,6 +15,7 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   property bool showStations: false
   property bool showAccount: false
+  property bool allowConfigChanges: false
   property string username: ""
   property string password: ""
 
@@ -28,11 +29,12 @@ Panel {
   }
   function action(name, index) { if (hostWidget) hostWidget.control(name, index) }
   function saveAccount() {
-    if (!hostWidget || !username || !password) return
+    if (!hostWidget || !username || !password || !allowConfigChanges) return
     hostWidget.saveAccount(username, password)
     password = ""
     pwField.text = ""
     showAccount = false
+    allowConfigChanges = false
   }
 
   KeyboardPanel {
@@ -89,7 +91,7 @@ Panel {
         Row {
           spacing: Style.space(6)
           PanelActionButton { iconText: "󰐊"; tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
-          PanelActionButton { iconText: "󰌆"; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.showAccount = !root.showAccount }
+          PanelActionButton { iconText: "󰌆"; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
           PanelActionButton { iconText: "󰆍"; tooltipText: "Open pianobar in terminal"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("terminal") }
         }
         Column {
@@ -112,9 +114,30 @@ Panel {
             onAccepted: root.saveAccount()
             Keys.onEscapePressed: root.showAccount = false
           }
+          Text {
+            width: parent.width
+            text: "Saving updates ~/.config/pianobar/config (user, password command, FIFO, event hook) and stores your password in Secret Service."
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.Wrap
+            textFormat: Text.PlainText
+          }
+          Text {
+            width: parent.width
+            text: (root.allowConfigChanges ? "☑ " : "☐ ") + "I agree to these changes"
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            MouseArea {
+              anchors.fill: parent
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.allowConfigChanges = !root.allowConfigChanges
+            }
+          }
           PanelActionButton {
             iconText: "󰄬"
-            tooltipText: "Save account and start playback"
+            tooltipText: root.allowConfigChanges ? "Save account and start playback" : "Agree to config changes first"
             foreground: root.foreground
             fontFamily: root.fontFamily
             onClicked: root.saveAccount()

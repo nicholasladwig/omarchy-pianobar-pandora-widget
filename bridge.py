@@ -149,17 +149,21 @@ def ensure_runtime():
             raise RuntimeError(f"{FIFO} exists and is not a FIFO")
     else:
         os.mkfifo(FIFO, 0o600)
-    values = config_values()
-    old_hook = values.get("event_command", "")
+    check_event_command()
     hook = str(Path(__file__).resolve().parent / "eventcmd")
-    if old_hook and old_hook != hook:
-        raise RuntimeError("Another pianobar event_command is configured; remove or chain it before starting")
     try:
         lines = CONFIG_FILE.read_text().splitlines()
     except OSError:
         lines = []
     replacements = {"fifo": str(FIFO), "event_command": hook}
     write_config(lines, replacements)
+
+
+def check_event_command():
+    old_hook = config_values().get("event_command", "")
+    hook = str(Path(__file__).resolve().parent / "eventcmd")
+    if old_hook and old_hook != hook:
+        raise RuntimeError("Another pianobar event_command is configured; remove or chain it before setup")
 
 
 def write_config(lines, replacements):
@@ -184,6 +188,7 @@ def write_config(lines, replacements):
 def save_account():
     if not shutil.which("secret-tool"):
         raise RuntimeError("secret-tool is required to save your password")
+    check_event_command()
     payload = json.loads(sys.stdin.readline())
     username = str(payload.get("username", "")).strip()
     password = str(payload.get("password", ""))
@@ -209,7 +214,10 @@ def start():
         raise RuntimeError("Install pianobar and tmux to play from the widget")
     if not configured():
         raise RuntimeError("Save your Pandora account in the widget first")
-    ensure_runtime()
+    values = config_values()
+    hook = str(Path(__file__).resolve().parent / "eventcmd")
+    if values.get("event_command") != hook or values.get("fifo") != str(FIFO) or not FIFO.is_fifo():
+        raise RuntimeError("Save your account in the widget to authorize pianobar setup")
     if managed_session():
         return
     try:
