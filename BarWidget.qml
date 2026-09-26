@@ -10,6 +10,11 @@ BarWidget {
   property var player: ({})
   property string errorText: ""
   property string output: ""
+  property int tickerOffset: 0
+  property string accountPayload: ""
+  readonly property string trackText: player.running && player.title ? player.artist + " — " + player.title : ""
+  readonly property string tickerText: trackText.length <= 24 ? trackText : (trackText + "     " + trackText).slice(tickerOffset, tickerOffset + 24)
+  onTrackTextChanged: tickerOffset = 0
   readonly property string helper: Qt.resolvedUrl("bridge.py").toString().replace(/^file:\/\//, "")
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
   readonly property bool popoutSwitchClosing: panelLoader.item ? panelLoader.item.popoutSwitchClosing === true : false
@@ -33,6 +38,21 @@ BarWidget {
     statusProcess.running = true
   }
 
+  function saveAccount(username, password) {
+    if (accountProcess.running) return
+    errorText = ""
+    accountPayload = JSON.stringify({ username: username, password: password }) + "\n"
+    accountProcess.command = ["python3", helper, "account"]
+    accountProcess.running = true
+  }
+
+  function runCommand(name) {
+    if (controlProcess.running) return
+    errorText = ""
+    controlProcess.command = ["python3", helper, name]
+    controlProcess.running = true
+  }
+
   function control(action, index) {
     if (controlProcess.running) return
     errorText = ""
@@ -48,6 +68,13 @@ BarWidget {
   Component.onCompleted: refresh()
 
   Timer {
+    interval: 350
+    running: root.trackText.length > 28
+    repeat: true
+    onTriggered: root.tickerOffset = (root.tickerOffset + 1) % (root.trackText.length + 5)
+  }
+
+  Timer {
     interval: 2000
     running: true
     repeat: true
@@ -59,6 +86,14 @@ BarWidget {
     stdout: StdioCollector { waitForEnd: true; onStreamFinished: function(data) {
       try { root.player = JSON.parse(data || "{}") } catch (e) { root.player = ({}) }
     } }
+  }
+
+  Process {
+    id: accountProcess
+    stdinEnabled: true
+    onStarted: { write(root.accountPayload); root.accountPayload = "" }
+    stderr: StdioCollector { waitForEnd: true; onStreamFinished: function(data) { if (data.trim()) root.errorText = data.trim() } }
+    onExited: root.refresh()
   }
 
   Process {
@@ -79,12 +114,13 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.player.running && root.player.title ? "♫ " + (root.player.artist + " — " + root.player.title).slice(0, 48) : "♫ Pandora"
-    tooltipText: root.player.running ? (root.player.station || "Pianobar") : "Pianobar is not running"
+    text: root.trackText ? "♫ " + root.tickerText : "♫"
+    fixedWidth: root.trackText ? Style.space(230) : Style.space(34)
+    tooltipText: root.trackText || (root.player.running ? "Choose a station" : "Open Pandora widget")
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.LeftButton) root.toggle()
       else if (buttonCode === Qt.MiddleButton) root.control("pause")
-      else if (buttonCode === Qt.RightButton) root.control("next")
+      else if (buttonCode === Qt.RightButton) root.runCommand("terminal")
     }
   }
 }

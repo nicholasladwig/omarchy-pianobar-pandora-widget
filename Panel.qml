@@ -14,6 +14,9 @@ Panel {
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   property bool showStations: false
+  property bool showAccount: false
+  property string username: ""
+  property string password: ""
 
   function open() { root.controller.show() }
   function close() { root.controller.hide() }
@@ -24,6 +27,13 @@ Panel {
     return false
   }
   function action(name, index) { if (hostWidget) hostWidget.control(name, index) }
+  function saveAccount() {
+    if (!hostWidget || !username || !password) return
+    hostWidget.saveAccount(username, password)
+    password = ""
+    pwField.text = ""
+    showAccount = false
+  }
 
   KeyboardPanel {
     id: popup
@@ -38,6 +48,7 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
+      blocked: root.showAccount
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
@@ -58,7 +69,7 @@ Panel {
         }
         Text {
           width: parent.width
-          text: root.player.title || "Start pianobar in a terminal to play Pandora"
+          text: root.player.title || (root.player.running ? "Choose a station below" : "Save your account, then press Play")
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.body
@@ -74,6 +85,40 @@ Panel {
           font.pixelSize: Style.font.bodySmall
           elide: Text.ElideRight
           textFormat: Text.PlainText
+        }
+        Row {
+          spacing: Style.space(6)
+          PanelActionButton { iconText: "󰐊"; tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
+          PanelActionButton { iconText: "󰌆"; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.showAccount = !root.showAccount }
+          PanelActionButton { iconText: "󰆍"; tooltipText: "Open pianobar in terminal"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("terminal") }
+        }
+        Column {
+          visible: root.showAccount
+          width: parent.width
+          spacing: Style.space(5)
+          TextField {
+            width: parent.width
+            placeholderText: "Pandora email or username"
+            text: root.username
+            onTextChanged: root.username = text
+          }
+          TextField {
+            id: pwField
+            width: parent.width
+            placeholderText: "Pandora password"
+            password: true
+            text: root.password
+            onTextChanged: root.password = text
+            onAccepted: root.saveAccount()
+            Keys.onEscapePressed: root.showAccount = false
+          }
+          PanelActionButton {
+            iconText: "󰄬"
+            tooltipText: "Save account and start playback"
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onClicked: root.saveAccount()
+          }
         }
         Row {
           spacing: Style.space(6)
@@ -162,8 +207,8 @@ Panel {
         }
         Text {
           width: parent.width
-          visible: hostWidget && !!hostWidget.errorText
-          text: hostWidget ? hostWidget.errorText : ""
+          visible: (hostWidget && !!hostWidget.errorText) || !!root.player.error
+          text: hostWidget && hostWidget.errorText ? hostWidget.errorText : (root.player.error || "")
           color: Color.urgent
           font.family: root.fontFamily
           font.pixelSize: Style.font.bodySmall
