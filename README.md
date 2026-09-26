@@ -13,7 +13,7 @@ A Pandora music widget for the **Omarchy Quattro bar** (Omarchy's current replac
 Authenticate Git for the private repository first. Then:
 
 ```sh
-omarchy plugin add git@github.com:nicholasladwig/omarchy-pianobar-pandora-widget.git --enable
+omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-widget.git --enable
 ```
 
 The repository root is the plugin folder. The plugin ID is `io.github.nicholasladwig.pianobar-pandora-widget`.
