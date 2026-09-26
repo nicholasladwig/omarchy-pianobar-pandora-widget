@@ -14,14 +14,19 @@ Panel {
   readonly property color foreground: bar ? bar.foreground : Color.foreground
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   property bool showStations: false
+  property bool showSettings: false
   property bool showAccount: false
   property bool allowConfigChanges: false
   property string username: ""
   property string password: ""
 
-  function open() { root.controller.show() }
+  function open() { root.showSettings = false; root.controller.show() }
+  function openSettings() { root.showSettings = true; root.controller.show() }
   function close() { root.controller.hide() }
-  function toggle() { if (root.opened) close(); else open() }
+  function toggle() {
+    if (root.opened && !root.showSettings) close()
+    else open()
+  }
   function switchPanel(direction) {
     if (bar && typeof bar.switchPanelFrom === "function")
       return bar.switchPanelFrom(hostWidget || root, direction)
@@ -59,6 +64,11 @@ Panel {
         width: parent.width
         spacing: Style.space(10)
 
+        Column {
+          visible: !root.showSettings
+          width: parent.width
+          spacing: Style.space(10)
+
         Text {
           width: parent.width
           text: root.player.running ? (root.player.station || "Pandora") : "Pianobar is not running"
@@ -91,8 +101,8 @@ Panel {
         Row {
           spacing: Style.space(6)
           PanelActionButton { iconText: "󰐊"; tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
+          PanelActionButton { iconText: "󰓛"; tooltipText: "Stop pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
           PanelActionButton { iconText: "󰌆"; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
-          PanelActionButton { iconText: "󰆍"; tooltipText: "Open pianobar in terminal"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("terminal") }
         }
         Column {
           visible: root.showAccount
@@ -237,6 +247,79 @@ Panel {
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.Wrap
           textFormat: Text.PlainText
+        }
+        }
+
+        Column {
+          visible: root.showSettings
+          width: parent.width
+          spacing: Style.space(12)
+
+          Text {
+            text: "PANDORA BAR SETTINGS"
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.subtitle
+            font.bold: true
+          }
+          Text {
+            text: "Minimum width while playing: " + (root.hostWidget ? root.hostWidget.playingWidth : 230) + " px"
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.body
+          }
+          Row {
+            spacing: Style.space(8)
+            PanelActionButton {
+              iconText: "−"
+              tooltipText: "Narrower"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              onClicked: if (root.hostWidget) root.hostWidget.setOption("playingWidth", Math.max(120, root.hostWidget.playingWidth - 20))
+            }
+            PanelActionButton {
+              iconText: "+"
+              tooltipText: "Wider"
+              foreground: root.foreground
+              fontFamily: root.fontFamily
+              onClicked: if (root.hostWidget) root.hostWidget.setOption("playingWidth", Math.min(500, root.hostWidget.playingWidth + 20))
+            }
+          }
+          Repeater {
+            model: [
+              { key: "showElapsed", label: "Elapsed time" },
+              { key: "showRemaining", label: "Remaining time" },
+              { key: "showTotal", label: "Total time" }
+            ]
+            Rectangle {
+              id: settingRow
+              required property var modelData
+              width: content.width
+              height: Style.space(28)
+              color: toggleMouse.containsMouse ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12) : "transparent"
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: ((root.hostWidget && root.hostWidget[settingRow.modelData.key]) ? "☑ " : "☐ ") + settingRow.modelData.label
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.body
+              }
+              MouseArea {
+                id: toggleMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: if (root.hostWidget) root.hostWidget.setOption(settingRow.modelData.key, !root.hostWidget[settingRow.modelData.key])
+              }
+            }
+          }
+          PanelActionButton {
+            iconText: "󰅁"
+            tooltipText: "Back to player"
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            onClicked: root.showSettings = false
+          }
         }
       }
     }

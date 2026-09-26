@@ -51,7 +51,13 @@ def event(name):
         has_song = bool(data.get("title"))
     else:
         has_song = bool(data.get("title") or previous.get("title"))
+    now = time.time()
+    playback_event = name in ("songstart", "stationfetchplaylist") and bool(data.get("title"))
     result = {
+        "durationSeconds": max(0, int(data.get("songDuration", "0") or 0)) if playback_event else previous.get("durationSeconds", 0),
+        "elapsedSeconds": max(0, int(data.get("songPlayed", "0") or 0)) if playback_event else previous.get("elapsedSeconds", 0),
+        "clockStarted": now if playback_event else previous.get("clockStarted", now),
+        "paused": False if playback_event else previous.get("paused", False),
         "station": data.get("stationName") or previous.get("station", ""),
         "stations": stations,
         "title": data.get("title", "") if has_song and data.get("title") else (previous.get("title", "") if has_song else ""),
@@ -64,10 +70,32 @@ def event(name):
         "error": data.get("pRetStr", "") if data.get("pRet", "0") not in ("0", "") else "",
         "updated": time.time(),
     }
+    write_state(result)
+
+
+def update_pause_state():
+    try:
+        value = json.loads(STATE.read_text())
+    except (OSError, ValueError):
+        return
+    if not value.get("title"):
+        return
+    now = time.time()
+    if value.get("paused", False):
+        value["paused"] = False
+        value["clockStarted"] = now
+    else:
+        value["elapsedSeconds"] = float(value.get("elapsedSeconds", 0) or 0) + max(0, now - float(value.get("clockStarted", now)))
+        value["paused"] = True
+    write_state(value)
+
+
+def write_state(value):
+    CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix="state-", dir=CACHE)
     try:
         with os.fdopen(fd, "w") as output:
-            json.dump(result, output, ensure_ascii=False)
+            json.dump(value, output, ensure_ascii=False)
         os.chmod(temporary, 0o600)
         os.replace(temporary, STATE)
     finally:
@@ -108,6 +136,13 @@ def status():
     except (OSError, ValueError):
         value = {}
     value["running"] = running
+    elapsed = float(value.get("elapsedSeconds", 0) or 0)
+    if running and value.get("title") and not value.get("paused", False):
+        elapsed += max(0, time.time() - float(value.get("clockStarted", time.time())))
+    duration = max(0, int(value.get("durationSeconds", 0) or 0))
+    value["elapsed"] = min(duration, int(elapsed)) if duration else int(elapsed)
+    value["remaining"] = max(0, duration - value["elapsed"])
+    value["total"] = duration
     value["managed"] = managed_session()
     value["configured"] = configured()
     if not running:
@@ -233,13 +268,13 @@ def start():
         raise RuntimeError(result.stderr.strip() or "Could not start pianobar")
 
 
-def open_terminal():
+def stop():
     if not managed_session():
-        start()
-    result = subprocess.run(["omarchy-launch-terminal", "tmux", "attach-session", "-t", "=" + SESSION],
+        return
+    result = subprocess.run(["tmux", "kill-session", "-t", "=" + SESSION],
                             capture_output=True, text=True)
     if result.returncode:
-        raise RuntimeError(result.stderr.strip() or "Could not open terminal")
+        raise RuntimeError(result.stderr.strip() or "Could not stop pianobar")
 
 
 def main():
@@ -253,8 +288,8 @@ def main():
         save_account()
     elif sys.argv[1] == "start" and len(sys.argv) == 2:
         start()
-    elif sys.argv[1] == "terminal" and len(sys.argv) == 2:
-        open_terminal()
+    elif sys.argv[1] == "stop" and len(sys.argv) == 2:
+        stop()
     elif sys.argv[1] == "control" and len(sys.argv) >= 3:
         action = sys.argv[2]
         if action == "station" and len(sys.argv) == 4:
@@ -268,6 +303,8 @@ def main():
             send(("" if waiting else "s") + index + "\n")
         elif action in ACTIONS and len(sys.argv) == 3:
             send(ACTIONS[action])
+            if action == "pause":
+                update_pause_state()
         else:
             raise RuntimeError("Unknown action")
     else:

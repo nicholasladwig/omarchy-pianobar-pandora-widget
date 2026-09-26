@@ -9,16 +9,46 @@ BarWidget {
 
   property var player: ({})
   property string errorText: ""
-  property string output: ""
   property int tickerOffset: 0
   property string accountPayload: ""
   readonly property string trackText: player.running && player.title ? player.artist + " — " + player.title : ""
-  readonly property string tickerText: trackText.length <= 24 ? trackText : (trackText + "     " + trackText).slice(tickerOffset, tickerOffset + 24)
+  readonly property int playingWidth: Math.max(120, Math.min(500, Number(setting("playingWidth", 230)) || 230))
+  readonly property bool showElapsed: setting("showElapsed", false) === true
+  readonly property bool showRemaining: setting("showRemaining", false) === true
+  readonly property bool showTotal: setting("showTotal", false) === true
+  readonly property string timeText: {
+    if (!trackText) return ""
+    var fields = []
+    if (showElapsed) fields.push(formatTime(player.elapsed))
+    if (showRemaining) fields.push("-" + formatTime(player.remaining))
+    if (showTotal) fields.push(formatTime(player.total))
+    return fields.length ? "  " + fields.join(" / ") : ""
+  }
+  readonly property int effectiveWidth: Math.max(playingWidth, 55 + timeText.length * 8)
+  readonly property int windowChars: Math.max(8, Math.floor((effectiveWidth - 30 - timeText.length * 8) / 9))
+  readonly property string tickerText: trackText.length <= windowChars ? trackText : (trackText + "     ").repeat(3).slice(tickerOffset, tickerOffset + windowChars)
   onTrackTextChanged: tickerOffset = 0
   readonly property string helper: Qt.resolvedUrl("bridge.py").toString().replace(/^file:\/\//, "")
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
   readonly property bool popoutSwitchClosing: panelLoader.item ? panelLoader.item.popoutSwitchClosing === true : false
 
+  function formatTime(value) {
+    var seconds = Math.max(0, Math.floor(Number(value) || 0))
+    var minutes = Math.floor(seconds / 60)
+    var remainder = String(seconds % 60).padStart(2, "0")
+    return minutes + ":" + remainder
+  }
+
+  function setOption(name, value) {
+    var entry = { id: root.moduleName }
+    for (var key in root.settings) if (key !== "id") entry[key] = root.settings[key]
+    entry[name] = value
+    root.settings = entry
+    if (root.bar && root.bar.shell && typeof root.bar.shell.updateEntryInline === "function")
+      root.bar.shell.updateEntryInline(root.moduleName, entry)
+  }
+
+  function openSettings() { if (panelLoader.item) panelLoader.item.openSettings() }
   function open() { if (panelLoader.item) panelLoader.item.open() }
   function close() { if (panelLoader.item) panelLoader.item.close() }
   function toggle() { if (panelLoader.item) panelLoader.item.toggle() }
@@ -33,7 +63,6 @@ BarWidget {
 
   function refresh() {
     if (statusProcess.running) return
-    output = ""
     statusProcess.command = ["python3", helper, "status"]
     statusProcess.running = true
   }
@@ -68,14 +97,14 @@ BarWidget {
   Component.onCompleted: refresh()
 
   Timer {
-    interval: 350
-    running: root.trackText.length > 24
+    interval: 450
+    running: root.trackText.length > root.windowChars
     repeat: true
     onTriggered: root.tickerOffset = (root.tickerOffset + 1) % (root.trackText.length + 5)
   }
 
   Timer {
-    interval: 2000
+    interval: 1000
     running: true
     repeat: true
     onTriggered: root.refresh()
@@ -122,13 +151,13 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.trackText ? "♫ " + root.tickerText : "♫"
-    fixedWidth: root.trackText ? Style.space(230) : Style.space(34)
+    text: root.trackText ? "♫ " + root.tickerText + root.timeText : "♫"
+    fixedWidth: root.trackText ? Style.space(root.effectiveWidth) : Style.space(34)
     tooltipText: root.trackText || (root.player.running ? "Choose a station" : "Open Pandora widget")
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.LeftButton) root.toggle()
       else if (buttonCode === Qt.MiddleButton) root.control("pause")
-      else if (buttonCode === Qt.RightButton) root.runCommand("terminal")
+      else if (buttonCode === Qt.RightButton) root.openSettings()
     }
   }
 }
