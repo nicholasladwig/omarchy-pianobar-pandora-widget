@@ -2,6 +2,8 @@
 
 Play Pandora from the Omarchy Quattro bar. The widget starts and manages pianobar in a detached session with no visible terminal. At rest the bar shows only a music note. During playback it slowly scrolls the artist and song title. Left click opens the player dropdown; right click opens widget settings.
 
+![Pianobar Pandora Widget playing music in the Omarchy bar](preview.png)
+
 ## Install
 
 ```sh
@@ -40,6 +42,7 @@ Version 1.4.9 places the Stations and Advanced controls side by side to reduce
 the player panel height. Version 1.4.10 shows a brief, theme-aware status line
 for each player action. Version 1.4.11 uses the player's own action wording,
 such as “Loving song” and “Banning song”, without naming the player in the panel.
+Version 1.4.12 refreshes the published preview with the current player panel.
 
 To reinstall from a clean plugin checkout:
 
