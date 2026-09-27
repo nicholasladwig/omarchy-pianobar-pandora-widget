@@ -16,6 +16,9 @@ To update an existing installation:
 omarchy plugin update io.github.nicholasladwig.pianobar-pandora-widget
 ```
 
+Version 1.4.1 fixes a missing Omarchy QML import that could leave an older
+widget instance visible after updating.
+
 To reinstall from a clean plugin checkout:
 
 ```sh
