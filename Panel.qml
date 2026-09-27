@@ -200,6 +200,16 @@ Panel {
           PanelActionButton { iconText: "󰕾"; tooltipText: "Volume up"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("volume-up") }
         }
         Text {
+          width: parent.width
+          visible: hostWidget && !!hostWidget.actionFeedback
+          text: hostWidget ? hostWidget.actionFeedback : ""
+          color: root.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          font.bold: true
+          textFormat: Text.PlainText
+        }
+        Text {
           text: "UP NEXT"
           color: root.foreground
           font.family: root.fontFamily
