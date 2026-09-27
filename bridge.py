@@ -20,7 +20,17 @@ STATE = CACHE / "state.json"
 FIFO = CONFIG / "ctl"
 CONFIG_FILE = CONFIG / "config"
 SESSION = "omarchy-pianobar-pandora-widget"
-ACTIONS = {"pause": "p", "next": "n", "love": "+", "ban": "-", "tired": "t", "volume-down": "(", "volume-up": ")", "volume-reset": "^"}
+ACTION_BINDINGS = {
+    "pause": (("act_songpausetoggle", "act_songpausetoggle2"), ("p", " ")),
+    "next": ("act_songnext", "n"),
+    "love": ("act_songlove", "+"),
+    "ban": ("act_songban", "-"),
+    "tired": ("act_songtired", "t"),
+    "volume-down": ("act_voldown", "("),
+    "volume-up": ("act_volup", ")"),
+    "volume-reset": ("act_volreset", "^"),
+    "station": ("act_stationchange", "s"),
+}
 
 
 def event(name):
@@ -194,7 +204,7 @@ def install_dependencies():
 
 def console_output():
     try:
-        result = subprocess.run(["tmux", "capture-pane", "-p", "-S", "-35", "-t", "=" + SESSION],
+        result = subprocess.run(["tmux", "capture-pane", "-p", "-S", "-35", "-t", pane_id()],
                                 capture_output=True, text=True, errors="replace", timeout=2)
     except subprocess.TimeoutExpired:
         return ""
@@ -213,11 +223,11 @@ def send_input():
     if len(answer) > 256 or any(ord(c) < 32 or ord(c) == 127 for c in answer):
         raise RuntimeError("Command input must be one line of at most 256 characters")
     if answer:
-        result = subprocess.run(["tmux", "send-keys", "-l", "-t", "=" + SESSION, "--", answer],
+        result = subprocess.run(["tmux", "send-keys", "-l", "-t", pane_id(), "--", answer],
                                 capture_output=True, text=True)
         if result.returncode:
             raise RuntimeError(result.stderr.strip() or "Could not send pianobar input")
-    result = subprocess.run(["tmux", "send-keys", "-t", "=" + SESSION, "Enter"],
+    result = subprocess.run(["tmux", "send-keys", "-t", pane_id(), "Enter"],
                             capture_output=True, text=True)
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or "Could not submit pianobar input")
@@ -228,7 +238,7 @@ def send_special_key(key):
         raise RuntimeError("Unsupported key")
     if not managed_session():
         raise RuntimeError("Start pianobar before sending a key")
-    result = subprocess.run(["tmux", "send-keys", "-t", "=" + SESSION, key],
+    result = subprocess.run(["tmux", "send-keys", "-t", pane_id(), key],
                             capture_output=True, text=True)
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or "Could not send pianobar key")
@@ -239,6 +249,38 @@ def managed_session():
         return False
     return subprocess.run(["tmux", "has-session", "-t", "=" + SESSION],
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+
+
+def pane_id():
+    result = subprocess.run(["tmux", "list-panes", "-t", "=" + SESSION, "-F", "#{pane_id}"],
+                            capture_output=True, text=True, timeout=2)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or "Could not find the pianobar tmux pane")
+    pane = result.stdout.splitlines()
+    if not pane:
+        raise RuntimeError("The pianobar tmux session has no active pane")
+    return pane[0]
+
+
+def action_key(action):
+    if action not in ACTION_BINDINGS:
+        raise RuntimeError("Unknown action")
+    config_key, default = ACTION_BINDINGS[action]
+    if action == "pause":
+        keys, fallbacks = config_key, default
+    else:
+        keys, fallbacks = (config_key,), (default,)
+    values = config_values()
+    for key, fallback in zip(keys, fallbacks):
+        value = values.get(key, "")
+        if value.lower() == "disabled":
+            continue
+        if value == "<Space>":
+            return " "
+        if len(value) == 1:
+            return value
+        return fallback
+    raise RuntimeError(f"Pianobar's {', '.join(keys)} bindings are disabled")
 
 
 def ensure_runtime():
@@ -370,9 +412,9 @@ def main():
                 waiting = json.loads(STATE.read_text()).get("waitingForStation", False)
             except (OSError, ValueError):
                 waiting = False
-            send(("" if waiting else "s") + index + "\n")
-        elif action in ACTIONS and len(sys.argv) == 3:
-            send(ACTIONS[action])
+            send(("" if waiting else action_key("station")) + index + "\n")
+        elif action in ACTION_BINDINGS and len(sys.argv) == 3:
+            send(action_key(action))
             if action == "pause":
                 update_pause_state()
         else:

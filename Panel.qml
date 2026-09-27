@@ -99,6 +99,18 @@ Panel {
           elide: Text.ElideRight
           textFormat: Text.PlainText
         }
+        Text {
+          width: parent.width
+          visible: !!root.player.title
+          text: "ELAPSED " + (root.hostWidget ? root.hostWidget.formatTime(root.player.elapsed) : "0:00")
+            + "  ·  REMAINING -" + (root.hostWidget ? root.hostWidget.formatTime(root.player.remaining) : "0:00")
+            + "  ·  TOTAL " + (root.hostWidget ? root.hostWidget.formatTime(root.player.total) : "0:00")
+          color: root.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.bodySmall
+          elide: Text.ElideRight
+          textFormat: Text.PlainText
+        }
         Row {
           spacing: Style.space(6)
           PanelActionButton { iconText: "󰐊"; visible: !(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
@@ -157,7 +169,7 @@ Panel {
         }
         Row {
           spacing: Style.space(6)
-          PanelActionButton { iconText: "󰐎"; tooltipText: "Pause or resume"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("pause") }
+          PanelActionButton { iconText: root.player.paused ? "󰐊" : "󰐎"; tooltipText: root.player.paused ? "Resume playback" : "Pause playback"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("pause") }
           PanelActionButton { iconText: "󰒭"; tooltipText: "Next song"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("next") }
           PanelActionButton { iconText: "󰋑"; tooltipText: "Love song"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("love") }
           PanelActionButton { iconText: "󰂭"; tooltipText: "Ban song"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("ban") }

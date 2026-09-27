@@ -15,8 +15,8 @@ BarWidget {
   property string advancedPayload: ""
   readonly property string trackText: player.running && player.title ? player.artist + " — " + player.title : ""
   readonly property int playingWidth: Math.max(120, Math.min(500, Number(setting("playingWidth", 230)) || 230))
-  readonly property bool showElapsed: setting("showElapsed", false) === true
-  readonly property bool showRemaining: setting("showRemaining", false) === true
+  readonly property bool showElapsed: setting("showElapsed", true) === true
+  readonly property bool showRemaining: setting("showRemaining", true) === true
   readonly property bool showTotal: setting("showTotal", false) === true
   readonly property string timeText: {
     if (!trackText) return ""

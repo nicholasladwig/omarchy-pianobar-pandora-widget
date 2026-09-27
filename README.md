@@ -17,7 +17,11 @@ omarchy plugin update io.github.nicholasladwig.pianobar-pandora-widget
 ```
 
 Version 1.4.1 fixes a missing Omarchy QML import that could leave an older
-widget instance visible after updating.
+widget instance visible after updating. Version 1.4.2 fixes dynamic tmux pane
+discovery for the in-widget pianobar command view, honors configured pianobar
+key bindings for playback controls, and shows elapsed, remaining, and total
+track time in the player dropdown. Elapsed and remaining time are also enabled
+on the bar by default; right-click settings can change them.
 
 To reinstall from a clean plugin checkout:
 
@@ -43,11 +47,11 @@ The widget does not auto-start on login. Click Play in the dropdown when you wan
 - Bar: music note only while idle; music note and slowly scrolling artist and title while playing. Left click opens or closes the player dropdown. Middle click pauses or resumes. Right click opens settings.
 - Player dropdown: Play, Stop, save account, pause or resume, next, love, ban, tired of song for a month, volume down or up, upcoming tracks, and station selection. The widget handles account setup and playback without a terminal.
 - Advanced pianobar commands: open the command view inside the dropdown to see pianobar's own output and enter its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. This exposes pianobar's remaining interactive commands without opening a separate terminal.
-- Right-click settings: adjust the minimum playing label width from 120 to 500 px, and separately show or hide elapsed, remaining, and total time. The bar expands if needed to fit enabled clocks. These settings persist in Omarchy's bar configuration.
+- Right-click settings: adjust the minimum playing label width from 120 to 500 px, and separately show or hide elapsed, remaining, and total time on the bar. Elapsed and remaining are enabled by default. The player dropdown always shows elapsed, remaining, and total for the current track. The bar expands if needed to fit enabled clocks. These settings persist in Omarchy's bar configuration.
 
 Times are estimated from pianobar's song start and duration events. Pausing through the widget freezes the estimate. Network stalls or playback changes made outside the widget may briefly make it inaccurate until the next song event.
 
-The control keys follow pianobar's default key bindings. If you customized these bindings, update `ACTIONS` and the station command in `bridge.py` to match. Pianobar's FIFO accepts keypresses, not semantic commands. The Advanced view passes text literally to the managed pianobar session, never through a shell. It is available only while the widget-managed session is running.
+The quick controls read pianobar's configured `act_*` key bindings and fall back to its defaults. Pianobar's FIFO accepts keypresses, not semantic commands. The Advanced view passes text literally to the managed pianobar session, never through a shell. It is available only while the widget-managed session is running.
 
 ## Data and security
 
