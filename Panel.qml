@@ -359,6 +359,15 @@ Panel {
           wrapMode: Text.Wrap
           textFormat: Text.PlainText
         }
+        Text {
+          width: parent.width
+          text: root.hostWidget ? root.hostWidget.pluginVersion : ""
+          color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55)
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+          horizontalAlignment: Text.AlignRight
+          textFormat: Text.PlainText
+        }
         }
 
         Column {

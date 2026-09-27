@@ -29,6 +29,8 @@ buttons after account setup; the play button starts, pauses, or resumes the
 managed player. It adds Edit Account and confirmed Remove Account actions.
 Version 1.4.5 resets the removal confirmation whenever the panel is closed and
 stops the managed player before clearing account credentials.
+Version 1.4.6 displays the installed plugin version at the lower-right of the
+left-click player panel for quick local-update verification.
 
 To reinstall from a clean plugin checkout:
 
