@@ -21,7 +21,10 @@ widget instance visible after updating. Version 1.4.2 fixes dynamic tmux pane
 discovery for the in-widget pianobar command view, honors configured pianobar
 key bindings for playback controls, and shows elapsed, remaining, and total
 track time in the player dropdown. Elapsed and remaining time are also enabled
-on the bar by default; right-click settings can change them.
+on the bar by default; right-click settings can change them. Version 1.4.3
+replaces the station icon with a highlighted text button, suppresses Pianobar's
+benign “Everything is fine :)” status, and keeps timing settings in the bar's
+persisted widget entry.
 
 To reinstall from a clean plugin checkout:
 
@@ -45,7 +48,7 @@ The widget does not auto-start on login. Click Play in the dropdown when you wan
 ## Controls and settings
 
 - Bar: music note only while idle; music note and slowly scrolling artist and title while playing. Left click opens or closes the player dropdown. Middle click pauses or resumes. Right click opens settings.
-- Player dropdown: Play, Stop, save account, pause or resume, next, love, ban, tired of song for a month, volume down or up, upcoming tracks, and station selection. The widget handles account setup and playback without a terminal.
+- Player dropdown: Play, Stop, save account, pause or resume, next, love, ban, tired of song for a month, volume down or up, elapsed/remaining/total time, upcoming tracks, and station selection. Select the highlighted **STATIONS** text button to open or close the station list. The widget handles account setup and playback without a terminal.
 - Advanced pianobar commands: open the command view inside the dropdown to see pianobar's own output and enter its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. This exposes pianobar's remaining interactive commands without opening a separate terminal.
 - Right-click settings: adjust the minimum playing label width from 120 to 500 px, and separately show or hide elapsed, remaining, and total time on the bar. Elapsed and remaining are enabled by default. The player dropdown always shows elapsed, remaining, and total for the current track. The bar expands if needed to fit enabled clocks. These settings persist in Omarchy's bar configuration.
 

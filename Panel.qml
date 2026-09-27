@@ -34,6 +34,7 @@ Panel {
     return false
   }
   function action(name, index) { if (hostWidget) hostWidget.control(name, index) }
+  function applyPersistedSettings(entry) { root.settings = entry }
   function saveAccount() {
     if (!hostWidget || !username || !password || !allowConfigChanges) return
     hostWidget.saveAccount(username, password)
@@ -204,12 +205,33 @@ Panel {
           font.family: root.fontFamily
           font.pixelSize: Style.font.bodySmall
         }
-        PanelActionButton {
-          iconText: "󰓇"
-          tooltipText: root.showStations ? "Hide stations" : "Switch station"
-          foreground: root.foreground
-          fontFamily: root.fontFamily
-          onClicked: root.showStations = !root.showStations
+        Rectangle {
+          id: stationButton
+          width: stationButtonText.implicitWidth + Style.space(22)
+          height: Style.space(30)
+          radius: height / 2
+          border.width: Style.space(1)
+          border.color: root.showStations ? root.foreground : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55)
+          color: stationButtonMouse.containsMouse || root.showStations
+            ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
+            : "transparent"
+          Text {
+            id: stationButtonText
+            anchors.centerIn: parent
+            text: root.showStations ? "STATIONS  ×" : "STATIONS"
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+            textFormat: Text.PlainText
+          }
+          MouseArea {
+            id: stationButtonMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: { root.showStations = !root.showStations; root.showAdvanced = false }
+          }
         }
         Flickable {
           visible: root.showStations

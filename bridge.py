@@ -33,6 +33,16 @@ ACTION_BINDINGS = {
 }
 
 
+def reported_error(data):
+    """Return only an actual pianobar failure, never a success status line."""
+    message = str(data.get("pRetStr", "")).strip()
+    if data.get("pRet", "0") in ("0", ""):
+        return ""
+    if message.lower() in ("everything is fine", "everything is fine :)"):
+        return ""
+    return message
+
+
 def event(name):
     data = {}
     for line in sys.stdin:
@@ -77,7 +87,7 @@ def event(name):
         "rating": data.get("rating", "") if has_song else "",
         "upcoming": upcoming if name in ("songstart", "stationfetchplaylist") else (previous.get("upcoming", []) if has_song else []),
         "waitingForStation": name == "usergetstations" or (previous.get("waitingForStation", False) and name not in ("stationfetchplaylist", "songstart")),
-        "error": data.get("pRetStr", "") if data.get("pRet", "0") not in ("0", "") else "",
+        "error": reported_error(data),
         "updated": time.time(),
     }
     write_state(result)
