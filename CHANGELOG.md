@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1
+
+- Blocks every Advanced input path when a password prompt is detected and directs the user to Edit Account, so credentials cannot reach tmux arguments or scrollback.
+
 ## 1.5.0
 
 - Replaced the one-second status subprocess with watched local state, an in-process clock, and low-rate environment checks.

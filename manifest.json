@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.nicholasladwig.pianobar-pandora-widget",
   "name": "Pianobar Pandora Widget for Omarchy Bar",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "author": "Nicholas Ladwig",
   "license": "MIT",
   "description": "Pandora music player widget with pianobar playback, scrolling now playing, playlist queue, stations, and time controls.",

@@ -381,21 +381,32 @@ Panel {
           TextField {
             id: commandField
             width: parent.width
+            visible: !(root.hostWidget && root.hostWidget.advancedPasswordPrompt)
             foreground: root.foreground
-            password: root.hostWidget && root.hostWidget.advancedPasswordPrompt
-            placeholderText: password ? "Password response (hidden), then Enter" : "Command key or answer, then Enter"
+            placeholderText: "Command key or answer, then Enter"
             onAccepted: {
               if (root.hostWidget) root.hostWidget.sendAdvanced(text)
               text = ""
             }
           }
           Row {
+            visible: !(root.hostWidget && root.hostWidget.advancedPasswordPrompt)
             spacing: Style.space(6)
             PanelActionButton { iconText: "?"; tooltipText: "Pianobar help"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendAdvanced("?") }
             PanelActionButton { iconText: "↑"; tooltipText: "Up"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Up") }
             PanelActionButton { iconText: "↓"; tooltipText: "Down"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Down") }
             PanelActionButton { iconText: "↵"; tooltipText: "Enter"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Enter") }
             PanelActionButton { iconText: "Esc"; tooltipText: "Escape"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Escape") }
+          }
+          Text {
+            width: parent.width
+            visible: root.hostWidget && root.hostWidget.advancedPasswordPrompt
+            text: "Password request detected. Advanced input is disabled. Use Edit Account to save the password securely."
+            color: root.urgent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.Wrap
+            textFormat: Text.PlainText
           }
         }
         Text {

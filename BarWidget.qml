@@ -9,7 +9,7 @@ BarWidget {
   id: root
   moduleName: "io.github.nicholasladwig.pianobar-pandora-widget"
 
-  property string pluginVersion: "1.5.0"
+  property string pluginVersion: "1.5.1"
   property var state: ({})
   property var environment: ({})
   property string consoleText: ""
@@ -118,6 +118,7 @@ BarWidget {
   }
 
   function sendAdvanced(text) {
+    if (advancedPasswordPrompt) { showFeedback("Use Edit Account to save the password securely"); return }
     if (advancedProcess.running) { showFeedback("Command is already being sent"); return }
     errorText = ""
     pendingAction = "Command"
@@ -128,6 +129,7 @@ BarWidget {
   }
 
   function sendSpecialKey(key) {
+    if (advancedPasswordPrompt) { showFeedback("Use Edit Account to save the password securely"); return }
     if (controlProcess.running) { showFeedback("Command is already being sent"); return }
     errorText = ""
     pendingAction = key
