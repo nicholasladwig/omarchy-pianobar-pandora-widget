@@ -82,7 +82,7 @@ qmllint -I "$OMARCHY_PATH/shell" BarWidget.qml Panel.qml
 python3 -m py_compile bridge.py
 ```
 
-The repository includes a temporary `preview.png` supplied by the user; it shows an earlier UI state. Replace it with a current playback screenshot when one is available.
+The repository's `preview.png` shows the widget during Pandora playback, including the scrolling now-playing label, playback controls, upcoming tracks, and status message.
 
 The [Omarchy development guide](https://plugins.omarchy.org/develop.html) defines the Quattro bar widget contract. The [publishing guide](https://plugins.omarchy.org/publish.html) requires a public GitHub repository and a valid manifest. The plugin's [marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/8898) tracks review.
 
