@@ -33,6 +33,9 @@ Version 1.4.6 displays the installed plugin version at the lower-right of the
 left-click player panel for quick local-update verification.
 Version 1.4.7 gives Advanced the same highlighted text control as Stations;
 opening either one closes the other.
+Version 1.4.8 binds every panel label, input, error, hover, and destructive
+state to the active Omarchy bar theme, so widget colors update with theme
+changes.
 
 To reinstall from a clean plugin checkout:
 
@@ -63,6 +66,10 @@ The widget does not auto-start on login. Click Play in the dropdown when you wan
 Times are estimated from pianobar's song start and duration events. Pausing through the widget freezes the estimate. Network stalls or playback changes made outside the widget may briefly make it inaccurate until the next song event.
 
 The quick controls read pianobar's configured `act_*` key bindings and fall back to its defaults. Pianobar's FIFO accepts keypresses, not semantic commands. The Advanced view passes text literally to the managed pianobar session, never through a shell. It is available only while the widget-managed session is running.
+
+All player-panel colors use the active Omarchy bar theme. Changing the Omarchy
+theme updates the widget's text, controls, input fields, hover states, and
+error or destructive-action color without changing widget settings.
 
 ## Data and security
 

@@ -9,7 +9,7 @@ BarWidget {
   moduleName: "io.github.nicholasladwig.pianobar-pandora-widget"
 
   property var player: ({})
-  property string pluginVersion: "1.4.7"
+  property string pluginVersion: "1.4.8"
   property string errorText: ""
   property int tickerOffset: 0
   property string accountPayload: ""

@@ -12,6 +12,7 @@ Panel {
   property var hostWidget: null
   readonly property var player: hostWidget ? hostWidget.player : ({})
   readonly property color foreground: bar ? bar.foreground : Color.foreground
+  readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   property bool showStations: false
   property bool showSettings: false
@@ -135,7 +136,7 @@ Panel {
           PanelActionButton { iconText: "󰓛"; visible: !root.player.configured; tooltipText: "Stop pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
           PanelActionButton { iconText: "󰌆"; visible: !root.player.configured; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
           PanelActionButton { iconText: "󰏘"; visible: !!root.player.configured; tooltipText: "Edit saved Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.editAccount() }
-          PanelActionButton { iconText: root.confirmAccountRemoval ? "󰄬" : "󰆴"; visible: !!root.player.configured; tooltipText: root.confirmAccountRemoval ? "Click again to remove the saved account and stop Pianobar" : "Remove saved Pandora account"; foreground: root.confirmAccountRemoval ? Color.urgent : root.foreground; fontFamily: root.fontFamily; onClicked: root.removeAccount() }
+          PanelActionButton { iconText: root.confirmAccountRemoval ? "󰄬" : "󰆴"; visible: !!root.player.configured; tooltipText: root.confirmAccountRemoval ? "Click again to remove the saved account and stop Pianobar" : "Remove saved Pandora account"; foreground: root.confirmAccountRemoval ? root.urgent : root.foreground; fontFamily: root.fontFamily; onClicked: root.removeAccount() }
         }
         Column {
           visible: root.showAccount
@@ -143,6 +144,7 @@ Panel {
           spacing: Style.space(5)
           TextField {
             width: parent.width
+            foreground: root.foreground
             placeholderText: "Pandora email or username"
             text: root.username
             onTextChanged: root.username = text
@@ -150,6 +152,7 @@ Panel {
           TextField {
             id: pwField
             width: parent.width
+            foreground: root.foreground
             placeholderText: "Pandora password"
             password: true
             text: root.password
@@ -355,6 +358,7 @@ Panel {
           TextField {
             id: commandField
             width: parent.width
+            foreground: root.foreground
             placeholderText: "Command key or answer, then Enter"
             onAccepted: {
               if (root.hostWidget) root.hostWidget.sendAdvanced(text)
@@ -374,7 +378,7 @@ Panel {
           width: parent.width
           visible: (hostWidget && !!hostWidget.errorText) || !!root.player.error
           text: hostWidget && hostWidget.errorText ? hostWidget.errorText : (root.player.error || "")
-          color: Color.urgent
+          color: root.urgent
           font.family: root.fontFamily
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.Wrap
