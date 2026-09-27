@@ -133,10 +133,20 @@ Panel {
           spacing: Style.space(6)
           PanelActionButton { iconText: "󰐊"; visible: !root.player.configured && !(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
           PanelActionButton { iconText: "󰏔"; visible: !!(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Install missing player packages with Polkit"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("install") }
-          PanelActionButton { iconText: "󰓛"; visible: !root.player.configured; tooltipText: "Stop pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
+          PanelActionButton { iconText: "󰓛"; visible: !root.player.configured || (root.player.running && root.player.managed); tooltipText: "Stop playback"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
           PanelActionButton { iconText: "󰌆"; visible: !root.player.configured; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
           PanelActionButton { iconText: "󰏘"; visible: !!root.player.configured; tooltipText: "Edit saved Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.editAccount() }
           PanelActionButton { iconText: root.confirmAccountRemoval ? "󰄬" : "󰆴"; visible: !!root.player.configured; tooltipText: root.confirmAccountRemoval ? "Click again to remove the saved account and stop Pianobar" : "Remove saved Pandora account"; foreground: root.confirmAccountRemoval ? root.urgent : root.foreground; fontFamily: root.fontFamily; onClicked: root.removeAccount() }
+        }
+        Text {
+          width: parent.width
+          visible: !!(root.player.missingPackages && root.player.missingPackages.length)
+          text: "Install packages: " + (root.player.missingPackages || []).join(", ") + ". A Polkit prompt will ask for confirmation."
+          color: root.foreground
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.bodySmall
+          wrapMode: Text.Wrap
+          textFormat: Text.PlainText
         }
         Column {
           visible: root.showAccount
@@ -342,7 +352,7 @@ Panel {
           spacing: Style.space(6)
           Text {
             width: parent.width
-            text: "PIANOBAR COMMANDS · Enter a key or prompt answer below. ? shows help."
+            text: "PLAYER COMMANDS · Enter a key or prompt answer below. ? shows help. Do not enter passwords here; they remain in terminal scrollback."
             color: root.foreground
             font.family: root.fontFamily
             font.pixelSize: Style.font.bodySmall
@@ -372,7 +382,8 @@ Panel {
             id: commandField
             width: parent.width
             foreground: root.foreground
-            placeholderText: "Command key or answer, then Enter"
+            password: root.hostWidget && root.hostWidget.advancedPasswordPrompt
+            placeholderText: password ? "Password response (hidden), then Enter" : "Command key or answer, then Enter"
             onAccepted: {
               if (root.hostWidget) root.hostWidget.sendAdvanced(text)
               text = ""

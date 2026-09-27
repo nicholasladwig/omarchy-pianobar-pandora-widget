@@ -18,31 +18,7 @@ To update an existing installation:
 omarchy plugin update io.github.nicholasladwig.pianobar-pandora-widget
 ```
 
-Version 1.4.1 fixes a missing Omarchy QML import that could leave an older
-widget instance visible after updating. Version 1.4.2 fixes dynamic tmux pane
-discovery for the in-widget pianobar command view, honors configured pianobar
-key bindings for playback controls, and shows elapsed, remaining, and total
-track time in the player dropdown. Elapsed and remaining time are also enabled
-on the bar by default; right-click settings can change them. Version 1.4.3
-replaces the station icon with a highlighted text button, suppresses Pianobar's
-benign “Everything is fine :)” status, and keeps timing settings in the bar's
-persisted widget entry. Version 1.4.4 hides the setup Start, Stop, and Save
-buttons after account setup; the play button starts, pauses, or resumes the
-managed player. It adds Edit Account and confirmed Remove Account actions.
-Version 1.4.5 resets the removal confirmation whenever the panel is closed and
-stops the managed player before clearing account credentials.
-Version 1.4.6 displays the installed plugin version at the lower-right of the
-left-click player panel for quick local-update verification.
-Version 1.4.7 gives Advanced the same highlighted text control as Stations;
-opening either one closes the other.
-Version 1.4.8 binds every panel label, input, error, hover, and destructive
-state to the active Omarchy bar theme, so widget colors update with theme
-changes.
-Version 1.4.9 places the Stations and Advanced controls side by side to reduce
-the player panel height. Version 1.4.10 shows a brief, theme-aware status line
-for each player action. Version 1.4.11 uses the player's own action wording,
-such as “Loving song” and “Banning song”, without naming the player in the panel.
-Version 1.4.12 refreshes the published preview with the current player panel.
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 To reinstall from a clean plugin checkout:
 
@@ -67,7 +43,7 @@ The widget does not auto-start on login. Click Play in the dropdown when you wan
 
 - Bar: music note only while idle; music note and slowly scrolling artist and title while playing. Left click opens or closes the player dropdown. Middle click pauses or resumes. Right click opens settings.
 - Player dropdown: After initial account setup, it keeps only playback controls, including Play/Pause (which starts the managed player when stopped), next, love, ban, tired of song for a month, volume down or up, elapsed/remaining/total time, upcoming tracks, and station selection. Each action briefly uses the same wording as its player action, such as “Loving song” or “Banning song”; errors remain visible in the panel. Use Edit Account to change the saved login. Remove Account requires a second click, clears the Secret Service password and login settings, then stops the managed player. Select the highlighted **STATIONS** text button to open or close the station list. The widget handles account setup and playback without a terminal.
-- Stations and Advanced: the highlighted **STATIONS** and **ADVANCED** controls sit side by side. Opening one closes the other. Advanced opens the command view inside the dropdown, which shows pianobar's own output and accepts its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. This exposes pianobar's remaining interactive commands without opening a separate terminal.
+- Stations and Advanced: the highlighted **STATIONS** and **ADVANCED** controls sit side by side. Opening one closes the other. Advanced opens the command view inside the dropdown, which shows pianobar's own output and accepts its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. Do not enter a password in this field: it can remain in terminal scrollback. A detected password prompt hides typed text, but the account form is the secure setup path.
 - Right-click settings: adjust the minimum playing label width from 120 to 500 px, and separately show or hide elapsed, remaining, and total time on the bar. Elapsed and remaining are enabled by default. The player dropdown always shows elapsed, remaining, and total for the current track. The bar expands if needed to fit enabled clocks. These settings persist in Omarchy's bar configuration.
 
 Times are estimated from pianobar's song start and duration events. Pausing through the widget freezes the estimate. Network stalls or playback changes made outside the widget may briefly make it inaccurate until the next song event.
@@ -80,7 +56,7 @@ error or destructive-action color without changing widget settings.
 
 ## Data and security
 
-The password is stored through `secret-tool` in your session's Secret Service collection. Pianobar's `password_command` retrieves it when pianobar starts. The username and other pianobar settings are in `~/.config/pianobar/config` with mode `0600` after account setup. The event bridge writes only song, station, and timing metadata to `$XDG_CACHE_HOME/io.github.nicholasladwig.pianobar-pandora-widget/state.json` (or `~/.cache/...`) with user-only permissions. The plugin never sends account data anywhere except to pianobar and the local Secret Service.
+The password is stored through `secret-tool` in your session's Secret Service collection. Pianobar's `password_command` retrieves it when pianobar starts. The username and other pianobar settings are in `~/.config/pianobar/config` with mode `0600` after account setup. Account setup stops without modifying an existing config that cannot be read. The event bridge writes only song, station, and timing metadata to `$XDG_CACHE_HOME/io.github.nicholasladwig.pianobar-pandora-widget/state.json` (or `~/.cache/...`) with user-only permissions. The plugin never sends account data anywhere except to pianobar and the local Secret Service.
 
 The plugin runs with your user permissions inside the Omarchy shell. Review the source before installation. It uses the normal pianobar process for Pandora traffic. Only the optional package installation requests elevated permission through Polkit; it invokes `/usr/bin/pacman` with a fixed command and missing package names from an allowlist. The package manager does not run during plugin installation, and removing the plugin does not remove system packages.
 
@@ -93,7 +69,7 @@ python3 ~/.config/omarchy/plugins/io.github.nicholasladwig.pianobar-pandora-widg
 qs log -p "$OMARCHY_PATH/shell" --tail 100
 ```
 
-If Play does not start music, check for an error in the dropdown and choose a station if one is requested. If you previously started pianobar elsewhere, close that process before starting the widget-managed session. If the secret store is locked, unlock it in your desktop session before saving the account or starting pianobar.
+If Play does not start music, check for an error in the dropdown and choose a station if one is requested. If you previously started pianobar elsewhere, close that process before starting the widget-managed session. A second player can attach to the same control FIFO, so controls can reach the other process; keep one player running. If the secret store is locked, unlock it in your desktop session before saving the account or starting pianobar.
 
 ## Remove
 

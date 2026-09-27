@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Small local bridge from pianobar's event command and control FIFO to Quattro."""
 import errno
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ import stat
 import sys
 import tempfile
 import time
+from contextlib import contextmanager
 
 PLUGIN_ID = "io.github.nicholasladwig.pianobar-pandora-widget"
 CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "pianobar"
@@ -43,71 +45,92 @@ def reported_error(data):
     return message
 
 
+def as_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def read_state():
+    try:
+        return json.loads(STATE.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+@contextmanager
+def state_lock():
+    CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(CACHE, 0o700)
+    lock_path = CACHE / "state.lock"
+    with open(lock_path, "a", encoding="utf-8") as lock:
+        os.chmod(lock_path, 0o600)
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def event(name):
     data = {}
     for line in sys.stdin:
         key, sep, value = line.rstrip("\n").partition("=")
         if sep:
             data[key] = value
-    CACHE.mkdir(mode=0o700, parents=True, exist_ok=True)
-    os.chmod(CACHE, 0o700)
-    try:
-        previous = json.loads(STATE.read_text())
-    except (OSError, ValueError):
-        previous = {}
-    stations = [data.get(f"station{i}", "") for i in range(min(int(data.get("stationCount", "0")), 1000))]
-    if not stations and name != "usergetstations":
-        stations = previous.get("stations", [])
-    upcoming = []
-    for i in range(5):
-        if f"titleNext{i}" not in data:
-            break
-        upcoming.append({"title": data.get(f"titleNext{i}", ""), "artist": data.get(f"artistNext{i}", ""), "album": data.get(f"albumNext{i}", "")})
-    # Only playback transitions clear the current song. Administrative events
-    # often have no song payload and must leave the displayed track intact.
-    if name == "songfinish":
-        has_song = bool(previous.get("title")) and previous.get("title") != data.get("title")
-    elif name in ("songstart", "stationfetchplaylist"):
-        has_song = bool(data.get("title"))
-    else:
-        has_song = bool(data.get("title") or previous.get("title"))
-    now = time.time()
-    playback_event = name in ("songstart", "stationfetchplaylist") and bool(data.get("title"))
-    result = {
-        "durationSeconds": max(0, int(data.get("songDuration", "0") or 0)) if playback_event else previous.get("durationSeconds", 0),
-        "elapsedSeconds": max(0, int(data.get("songPlayed", "0") or 0)) if playback_event else previous.get("elapsedSeconds", 0),
-        "clockStarted": now if playback_event else previous.get("clockStarted", now),
-        "paused": False if playback_event else previous.get("paused", False),
-        "station": data.get("stationName") or previous.get("station", ""),
-        "stations": stations,
-        "title": data.get("title", "") if has_song and data.get("title") else (previous.get("title", "") if has_song else ""),
-        "artist": data.get("artist", "") if has_song and data.get("artist") else (previous.get("artist", "") if has_song else ""),
-        "album": data.get("album", "") if has_song and data.get("album") else (previous.get("album", "") if has_song else ""),
-        "coverArt": data.get("coverArt", "") if has_song and data.get("coverArt") else (previous.get("coverArt", "") if has_song else ""),
-        "rating": data.get("rating", "") if has_song else "",
-        "upcoming": upcoming if name in ("songstart", "stationfetchplaylist") else (previous.get("upcoming", []) if has_song else []),
-        "waitingForStation": name == "usergetstations" or (previous.get("waitingForStation", False) and name not in ("stationfetchplaylist", "songstart")),
-        "error": reported_error(data),
-        "updated": time.time(),
-    }
-    write_state(result)
+    with state_lock():
+        previous = read_state()
+        stations = [data.get(f"station{i}", "") for i in range(min(max(0, as_int(data.get("stationCount"))), 1000))]
+        if not stations and name != "usergetstations":
+            stations = previous.get("stations", [])
+        upcoming = []
+        for i in range(5):
+            if f"titleNext{i}" not in data:
+                break
+            upcoming.append({"title": data.get(f"titleNext{i}", ""), "artist": data.get(f"artistNext{i}", ""), "album": data.get(f"albumNext{i}", "")})
+        # Only playback transitions clear the current song. Administrative events
+        # often have no song payload and must leave the displayed track intact.
+        if name == "songfinish":
+            has_song = bool(previous.get("title")) and previous.get("title") != data.get("title")
+        elif name in ("songstart", "stationfetchplaylist"):
+            has_song = bool(data.get("title"))
+        else:
+            has_song = bool(data.get("title") or previous.get("title"))
+        now = time.time()
+        playback_event = name in ("songstart", "stationfetchplaylist") and bool(data.get("title"))
+        result = {
+            "durationSeconds": max(0, as_int(data.get("songDuration"))) if playback_event else previous.get("durationSeconds", 0),
+            "elapsedSeconds": max(0, as_int(data.get("songPlayed"))) if playback_event else previous.get("elapsedSeconds", 0),
+            "clockStarted": now if playback_event else previous.get("clockStarted", now),
+            "paused": False if playback_event else previous.get("paused", False),
+            "station": data.get("stationName") or previous.get("station", ""),
+            "stations": stations,
+            "title": data.get("title", "") if has_song and data.get("title") else (previous.get("title", "") if has_song else ""),
+            "artist": data.get("artist", "") if has_song and data.get("artist") else (previous.get("artist", "") if has_song else ""),
+            "album": data.get("album", "") if has_song and data.get("album") else (previous.get("album", "") if has_song else ""),
+            "rating": data.get("rating", "") if has_song else "",
+            "upcoming": upcoming if name in ("songstart", "stationfetchplaylist") else (previous.get("upcoming", []) if has_song else []),
+            "waitingForStation": name == "usergetstations" or (previous.get("waitingForStation", False) and name not in ("stationfetchplaylist", "songstart")),
+            "error": reported_error(data),
+            "updated": now,
+        }
+        write_state(result)
 
 
 def update_pause_state():
-    try:
-        value = json.loads(STATE.read_text())
-    except (OSError, ValueError):
-        return
-    if not value.get("title"):
-        return
-    now = time.time()
-    if value.get("paused", False):
-        value["paused"] = False
-        value["clockStarted"] = now
-    else:
-        value["elapsedSeconds"] = float(value.get("elapsedSeconds", 0) or 0) + max(0, now - float(value.get("clockStarted", now)))
-        value["paused"] = True
-    write_state(value)
+    with state_lock():
+        value = read_state()
+        if not value.get("title"):
+            return
+        now = time.time()
+        if value.get("paused", False):
+            value["paused"] = False
+            value["clockStarted"] = now
+        else:
+            value["elapsedSeconds"] = float(value.get("elapsedSeconds", 0) or 0) + max(0, now - float(value.get("clockStarted", now)))
+            value["paused"] = True
+        write_state(value)
 
 
 def write_state(value):
@@ -139,48 +162,46 @@ def fifo_fd():
 def send(payload):
     fd = fifo_fd()
     try:
-        os.write(fd, payload.encode("utf-8"))
+        data = payload.encode("utf-8")
+        while data:
+            written = os.write(fd, data)
+            if written <= 0:
+                raise RuntimeError("Could not write the full player command")
+            data = data[written:]
     finally:
         os.close(fd)
 
 
-def status():
+def env_status():
     try:
         running_fd = fifo_fd()
         os.close(running_fd)
         running = True
     except (RuntimeError, OSError):
         running = False
-    try:
-        value = json.loads(STATE.read_text())
-    except (OSError, ValueError):
-        value = {}
-    value["running"] = running
-    elapsed = float(value.get("elapsedSeconds", 0) or 0)
-    if running and value.get("title") and not value.get("paused", False):
-        elapsed += max(0, time.time() - float(value.get("clockStarted", time.time())))
-    duration = max(0, int(value.get("durationSeconds", 0) or 0))
-    value["elapsed"] = min(duration, int(elapsed)) if duration else int(elapsed)
-    value["remaining"] = max(0, duration - value["elapsed"])
-    value["total"] = duration
-    value["missingPackages"] = missing_packages()
-    value["managed"] = managed_session()
-    value["console"] = console_output() if value["managed"] else ""
-    value["configured"] = configured()
-    value["account"] = config_values().get("user", "") if value["configured"] else ""
-    if not running:
-        value["title"] = ""
-        value["upcoming"] = []
-        value["waitingForStation"] = False
-    print(json.dumps(value, ensure_ascii=False))
+    values = config_values()
+    is_configured = configured(values)
+    print(json.dumps({
+        "running": running,
+        "missingPackages": missing_packages(),
+        "managed": managed_session(),
+        "configured": is_configured,
+        "account": values.get("user", "") if is_configured else "",
+    }, ensure_ascii=False))
+
+
+def console_status():
+    print(json.dumps({"console": console_output() if managed_session() else ""}, ensure_ascii=False))
 
 
 def config_values():
     values = {}
     try:
         lines = CONFIG_FILE.read_text().splitlines()
-    except OSError:
+    except FileNotFoundError:
         return values
+    except OSError as exc:
+        raise RuntimeError(f"Could not read {CONFIG_FILE}: {exc.strerror or exc}") from exc
     for line in lines:
         key, sep, value = line.partition("=")
         if sep and not key.lstrip().startswith("#"):
@@ -188,9 +209,18 @@ def config_values():
     return values
 
 
-def configured():
-    values = config_values()
+def configured(values=None):
+    values = config_values() if values is None else values
     return bool(values.get("user") and (values.get("password_command") or values.get("password")))
+
+
+def config_lines():
+    try:
+        return CONFIG_FILE.read_text().splitlines()
+    except FileNotFoundError:
+        return []
+    except OSError as exc:
+        raise RuntimeError(f"Could not read {CONFIG_FILE}: {exc.strerror or exc}") from exc
 
 
 def missing_packages():
@@ -303,10 +333,7 @@ def ensure_runtime():
         os.mkfifo(FIFO, 0o600)
     check_event_command()
     hook = str(Path(__file__).resolve().parent / "eventcmd")
-    try:
-        lines = CONFIG_FILE.read_text().splitlines()
-    except OSError:
-        lines = []
+    lines = config_lines()
     replacements = {"fifo": str(FIFO), "event_command": hook}
     write_config(lines, replacements)
 
@@ -332,6 +359,7 @@ def write_config(lines, replacements):
             out.write("\n".join(kept) + "\n")
         os.chmod(temporary, 0o600)
         os.replace(temporary, CONFIG_FILE)
+        os.chmod(CONFIG_FILE, 0o600)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
@@ -351,10 +379,7 @@ def save_account():
                             input=password, text=True, capture_output=True, timeout=30)
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or "Could not save password in Secret Service")
-    try:
-        lines = CONFIG_FILE.read_text().splitlines()
-    except OSError:
-        lines = []
+    lines = config_lines()
     command = "secret-tool lookup application " + shlex.quote(PLUGIN_ID) + " account " + shlex.quote(username)
     write_config(lines, {"user": username, "password": None, "password_command": command})
     ensure_runtime()
@@ -373,10 +398,7 @@ def remove_account():
                             capture_output=True, text=True, timeout=30)
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or "Could not remove the password from Secret Service")
-    try:
-        lines = CONFIG_FILE.read_text().splitlines()
-    except OSError:
-        lines = []
+    lines = config_lines()
     write_config(lines, {"user": None, "password": None, "password_command": None})
 
 
@@ -415,11 +437,13 @@ def stop():
 
 def main():
     if len(sys.argv) < 2:
-        raise RuntimeError("Usage: bridge.py event NAME | status | control ACTION [INDEX]")
+        raise RuntimeError("Usage: bridge.py event NAME | env | console | control ACTION [INDEX]")
     if sys.argv[1] == "event" and len(sys.argv) == 3:
         event(sys.argv[2])
-    elif sys.argv[1] == "status" and len(sys.argv) == 2:
-        status()
+    elif sys.argv[1] in ("env", "status") and len(sys.argv) == 2:
+        env_status()
+    elif sys.argv[1] == "console" and len(sys.argv) == 2:
+        console_status()
     elif sys.argv[1] == "account" and len(sys.argv) == 2:
         save_account()
     elif sys.argv[1] == "start" and len(sys.argv) == 2:
