@@ -27,6 +27,8 @@ benign “Everything is fine :)” status, and keeps timing settings in the bar'
 persisted widget entry. Version 1.4.4 hides the setup Start, Stop, and Save
 buttons after account setup; the play button starts, pauses, or resumes the
 managed player. It adds Edit Account and confirmed Remove Account actions.
+Version 1.4.5 resets the removal confirmation whenever the panel is closed and
+stops the managed player before clearing account credentials.
 
 To reinstall from a clean plugin checkout:
 

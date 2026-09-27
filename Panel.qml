@@ -22,9 +22,9 @@ Panel {
   property string username: ""
   property string password: ""
 
-  function open() { root.showSettings = false; root.controller.show() }
+  function open() { root.showSettings = false; root.confirmAccountRemoval = false; root.controller.show() }
   function openSettings() { root.showSettings = true; root.controller.show() }
-  function close() { root.controller.hide() }
+  function close() { root.confirmAccountRemoval = false; root.controller.hide() }
   function toggle() {
     if (root.opened && !root.showSettings) close()
     else open()

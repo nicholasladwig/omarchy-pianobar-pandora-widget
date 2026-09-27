@@ -366,6 +366,7 @@ def remove_account():
     username = values.get("user", "")
     if not username:
         raise RuntimeError("No saved Pandora account was found")
+    stop()
     if not shutil.which("secret-tool"):
         raise RuntimeError("secret-tool is required to remove the saved password")
     result = subprocess.run(["secret-tool", "clear", "application", PLUGIN_ID, "account", username],
@@ -376,7 +377,6 @@ def remove_account():
         lines = CONFIG_FILE.read_text().splitlines()
     except OSError:
         lines = []
-    stop()
     write_config(lines, {"user": None, "password": None, "password_command": None})
 
 
