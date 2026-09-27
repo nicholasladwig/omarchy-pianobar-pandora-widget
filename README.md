@@ -36,6 +36,8 @@ opening either one closes the other.
 Version 1.4.8 binds every panel label, input, error, hover, and destructive
 state to the active Omarchy bar theme, so widget colors update with theme
 changes.
+Version 1.4.9 places the Stations and Advanced controls side by side to reduce
+the player panel height.
 
 To reinstall from a clean plugin checkout:
 
@@ -60,7 +62,7 @@ The widget does not auto-start on login. Click Play in the dropdown when you wan
 
 - Bar: music note only while idle; music note and slowly scrolling artist and title while playing. Left click opens or closes the player dropdown. Middle click pauses or resumes. Right click opens settings.
 - Player dropdown: After initial account setup, it keeps only playback controls, including Play/Pause (which starts the managed player when stopped), next, love, ban, tired of song for a month, volume down or up, elapsed/remaining/total time, upcoming tracks, and station selection. Use Edit Account to change the saved login. Remove Account requires a second click, clears the Secret Service password and login settings, then stops the managed player. Select the highlighted **STATIONS** text button to open or close the station list. The widget handles account setup and playback without a terminal.
-- Advanced pianobar commands: select the highlighted **ADVANCED** text button to open the command view inside the dropdown. It closes the station list, and selecting **STATIONS** closes Advanced. The command view shows pianobar's own output and accepts its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. This exposes pianobar's remaining interactive commands without opening a separate terminal.
+- Stations and Advanced: the highlighted **STATIONS** and **ADVANCED** controls sit side by side. Opening one closes the other. Advanced opens the command view inside the dropdown, which shows pianobar's own output and accepts its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. This exposes pianobar's remaining interactive commands without opening a separate terminal.
 - Right-click settings: adjust the minimum playing label width from 120 to 500 px, and separately show or hide elapsed, remaining, and total time on the bar. Elapsed and remaining are enabled by default. The player dropdown always shows elapsed, remaining, and total for the current track. The bar expands if needed to fit enabled clocks. These settings persist in Omarchy's bar configuration.
 
 Times are estimated from pianobar's song start and duration events. Pausing through the widget freezes the estimate. Network stalls or playback changes made outside the widget may briefly make it inaccurate until the next song event.

@@ -226,6 +226,8 @@ Panel {
           font.family: root.fontFamily
           font.pixelSize: Style.font.bodySmall
         }
+        Row {
+          spacing: Style.space(8)
         Rectangle {
           id: stationButton
           width: stationButtonText.implicitWidth + Style.space(22)
@@ -253,6 +255,35 @@ Panel {
             cursorShape: Qt.PointingHandCursor
             onClicked: { root.showStations = !root.showStations; root.showAdvanced = false }
           }
+        }
+        Rectangle {
+          id: advancedButton
+          width: advancedButtonText.implicitWidth + Style.space(22)
+          height: Style.space(30)
+          radius: height / 2
+          border.width: Style.space(1)
+          border.color: root.showAdvanced ? root.foreground : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55)
+          color: advancedButtonMouse.containsMouse || root.showAdvanced
+            ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
+            : "transparent"
+          Text {
+            id: advancedButtonText
+            anchors.centerIn: parent
+            text: root.showAdvanced ? "ADVANCED  ×" : "ADVANCED"
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.caption
+            font.bold: true
+            textFormat: Text.PlainText
+          }
+          MouseArea {
+            id: advancedButtonMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: { root.showAdvanced = !root.showAdvanced; root.showStations = false }
+          }
+        }
         }
         Flickable {
           visible: root.showStations
@@ -293,34 +324,6 @@ Panel {
                 }
               }
             }
-          }
-        }
-        Rectangle {
-          id: advancedButton
-          width: advancedButtonText.implicitWidth + Style.space(22)
-          height: Style.space(30)
-          radius: height / 2
-          border.width: Style.space(1)
-          border.color: root.showAdvanced ? root.foreground : Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.55)
-          color: advancedButtonMouse.containsMouse || root.showAdvanced
-            ? Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.18)
-            : "transparent"
-          Text {
-            id: advancedButtonText
-            anchors.centerIn: parent
-            text: root.showAdvanced ? "ADVANCED  ×" : "ADVANCED"
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
-            font.bold: true
-            textFormat: Text.PlainText
-          }
-          MouseArea {
-            id: advancedButtonMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: { root.showAdvanced = !root.showAdvanced; root.showStations = false }
           }
         }
         Column {
