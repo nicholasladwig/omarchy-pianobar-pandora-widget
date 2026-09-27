@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2
+
+- Rechecks the live terminal prompt inside the helper immediately before it reads or sends Advanced text, closing the UI refresh race for password prompts.
+
 ## 1.5.1
 
 - Blocks every Advanced input path when a password prompt is detected and directs the user to Edit Account, so credentials cannot reach tmux arguments or scrollback.

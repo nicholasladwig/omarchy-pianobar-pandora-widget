@@ -256,13 +256,22 @@ def console_output():
     return output[-7000:].strip()
 
 
+def password_prompt_active():
+    lines = [line.strip() for line in console_output().splitlines() if line.strip()]
+    return bool(lines and re.search(r"password", lines[-1], re.IGNORECASE))
+
+
 def send_input():
     if not managed_session():
         raise RuntimeError("Start pianobar before sending a command")
+    if password_prompt_active():
+        raise RuntimeError("Password prompts are handled through Edit Account")
     value = json.loads(sys.stdin.readline())
     answer = str(value.get("text", ""))
     if len(answer) > 256 or any(ord(c) < 32 or ord(c) == 127 for c in answer):
         raise RuntimeError("Command input must be one line of at most 256 characters")
+    if password_prompt_active():
+        raise RuntimeError("Password prompts are handled through Edit Account")
     if answer:
         result = subprocess.run(["tmux", "send-keys", "-l", "-t", pane_id(), "--", answer],
                                 capture_output=True, text=True)
