@@ -9,7 +9,7 @@ BarWidget {
   moduleName: "io.github.nicholasladwig.pianobar-pandora-widget"
 
   property var player: ({})
-  property string pluginVersion: "1.4.10"
+  property string pluginVersion: "1.4.11"
   property string errorText: ""
   property string actionFeedback: ""
   property string pendingAction: ""
@@ -62,14 +62,14 @@ BarWidget {
 
   function actionName(action) {
     var names = {
-      "pause": player.paused ? "RESUME" : "PAUSE",
-      "next": "NEXT",
-      "love": "LOVE",
-      "ban": "BAN",
-      "tired": "TIRED",
-      "volume-down": "VOLUME DOWN",
-      "volume-up": "VOLUME UP",
-      "station": "STATION"
+      "pause": player.paused ? "Resume playback" : "Pause playback",
+      "next": "Next song",
+      "love": "Loving song",
+      "ban": "Banning song",
+      "tired": "Putting song on shelf",
+      "volume-down": "Decrease volume",
+      "volume-up": "Increase volume",
+      "station": "Change station"
     }
     return names[action] || "COMMAND"
   }
@@ -102,38 +102,38 @@ BarWidget {
   }
 
   function sendAdvanced(text) {
-    if (advancedProcess.running) { showFeedback("COMMAND IS ALREADY BEING SENT"); return }
+    if (advancedProcess.running) { showFeedback("Command is already being sent"); return }
     errorText = ""
-    pendingAction = "COMMAND"
-    showFeedback("COMMAND SENDING…")
+    pendingAction = "Command"
+    showFeedback("Sending command…")
     advancedPayload = JSON.stringify({ text: text }) + "\n"
     advancedProcess.command = ["python3", helper, "input"]
     advancedProcess.running = true
   }
 
   function sendSpecialKey(key) {
-    if (controlProcess.running) { showFeedback("COMMAND IS ALREADY BEING SENT"); return }
+    if (controlProcess.running) { showFeedback("Command is already being sent"); return }
     errorText = ""
     pendingAction = key.toUpperCase()
-    showFeedback(pendingAction + " SENDING…")
+    showFeedback("Sending " + pendingAction.toLowerCase() + "…")
     controlProcess.command = ["python3", helper, "key", key]
     controlProcess.running = true
   }
 
   function runCommand(name) {
-    if (controlProcess.running) { showFeedback("COMMAND IS ALREADY BEING SENT"); return }
+    if (controlProcess.running) { showFeedback("Command is already being sent"); return }
     errorText = ""
-    pendingAction = name === "start" ? "PLAYBACK" : (name === "stop" ? "PLAYBACK STOP" : name.toUpperCase())
-    showFeedback(pendingAction + " SENDING…")
+    pendingAction = name === "start" ? "Start playback" : (name === "stop" ? "Stop playback" : name)
+    showFeedback("Sending " + pendingAction.toLowerCase() + "…")
     controlProcess.command = ["python3", helper, name]
     controlProcess.running = true
   }
 
   function control(action, index) {
-    if (controlProcess.running) { showFeedback("COMMAND IS ALREADY BEING SENT"); return }
+    if (controlProcess.running) { showFeedback("Command is already being sent"); return }
     errorText = ""
     pendingAction = actionName(action)
-    showFeedback(pendingAction + " SENDING…")
+    showFeedback(pendingAction + "…")
     var args = ["python3", helper, "control", action]
     if (index !== undefined) args.push(String(index))
     controlProcess.command = args
@@ -196,8 +196,8 @@ BarWidget {
     onStarted: { write(root.advancedPayload); root.advancedPayload = "" }
     stderr: StdioCollector { id: advancedError; waitForEnd: true }
     onExited: function(exitCode) {
-      if (exitCode !== 0) root.errorText = String(advancedError.text || "Pianobar input failed").trim()
-      else root.showFeedback(root.pendingAction + " SENT TO PIANOBAR")
+      if (exitCode !== 0) root.errorText = String(advancedError.text || "Player input failed").trim()
+      else root.showFeedback(root.pendingAction + " sent")
       root.refresh()
     }
   }
@@ -206,8 +206,8 @@ BarWidget {
     id: controlProcess
     stderr: StdioCollector { id: controlError; waitForEnd: true }
     onExited: function(exitCode) {
-      if (exitCode !== 0) root.errorText = String(controlError.text || "Pianobar command failed").trim()
-      else root.showFeedback(root.pendingAction + " SENT TO PIANOBAR")
+      if (exitCode !== 0) root.errorText = String(controlError.text || "Player command failed").trim()
+      else root.showFeedback(root.pendingAction)
       root.refresh()
     }
   }

@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "id": "io.github.nicholasladwig.pianobar-pandora-widget",
   "name": "Pianobar Pandora Widget for Omarchy Bar",
-  "version": "1.4.10",
+  "version": "1.4.11",
   "author": "Nicholas Ladwig",
   "license": "MIT",
-  "description": "Self-contained Pandora player with scrolling now playing, upcoming songs, stations, time options, and pianobar controls.",
+  "description": "Pandora music player widget with pianobar playback, scrolling now playing, playlist queue, stations, and time controls.",
   "kinds": ["bar-widget"],
   "entryPoints": { "barWidget": "BarWidget.qml" },
   "barWidget": {
     "displayName": "Pianobar Pandora",
-    "description": "Now playing, queue, stations, and controls",
+    "description": "Pandora music, playlists, stations, and playback controls",
     "category": "Media",
     "allowMultiple": false,
     "defaultSection": "right"
