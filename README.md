@@ -8,7 +8,7 @@ Play Pandora from the Omarchy Quattro bar. The widget starts and manages pianoba
 omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-widget.git --enable
 ```
 
-The plugin requires the Omarchy packages `pianobar`, `python`, `tmux`, and `libsecret` (which provides `secret-tool`). Install any missing dependencies before setup; the plugin does not install software.
+The widget needs Python 3, which is part of a normal Omarchy installation. If `pianobar`, `tmux`, or `libsecret` (which provides `secret-tool`) are missing, an install button appears in the dropdown. Clicking it requests Polkit authorization and installs only the missing packages with pacman. Omarchy's plugin installer itself only clones and enables plugins; it does not run package hooks.
 
 To update an existing installation:
 
@@ -27,7 +27,7 @@ Removing the plugin does not remove your pianobar configuration or saved Secret 
 
 ## First use
 
-1. Left click the music note to open the dropdown.
+1. Left click the music note to open the dropdown. If an install icon appears, click it and approve the graphical Polkit prompt; the widget installs missing player packages without opening a terminal.
 2. Click the account icon, enter your Pandora username and password, review the config changes, check the consent box, and click the check mark. This saves the password in the desktop Secret Service and starts pianobar without opening a terminal.
 3. If pianobar asks for an initial station, open the station list in the dropdown and select one. Later starts use pianobar's existing station configuration.
 
@@ -39,17 +39,18 @@ The widget does not auto-start on login. Click Play in the dropdown when you wan
 
 - Bar: music note only while idle; music note and slowly scrolling artist and title while playing. Left click opens or closes the player dropdown. Middle click pauses or resumes. Right click opens settings.
 - Player dropdown: Play, Stop, save account, pause or resume, next, love, ban, tired of song for a month, volume down or up, upcoming tracks, and station selection. The widget handles account setup and playback without a terminal.
+- Advanced pianobar commands: open the command view inside the dropdown to see pianobar's own output and enter its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. This exposes pianobar's remaining interactive commands without opening a separate terminal.
 - Right-click settings: adjust the minimum playing label width from 120 to 500 px, and separately show or hide elapsed, remaining, and total time. The bar expands if needed to fit enabled clocks. These settings persist in Omarchy's bar configuration.
 
 Times are estimated from pianobar's song start and duration events. Pausing through the widget freezes the estimate. Network stalls or playback changes made outside the widget may briefly make it inaccurate until the next song event.
 
-The control keys follow pianobar's default key bindings. If you customized these bindings, update `ACTIONS` and the station command in `bridge.py` to match. Pianobar's FIFO accepts keypresses, not semantic commands. Station editing and other advanced pianobar prompts are not yet exposed in the dropdown; the widget does not open a terminal automatically.
+The control keys follow pianobar's default key bindings. If you customized these bindings, update `ACTIONS` and the station command in `bridge.py` to match. Pianobar's FIFO accepts keypresses, not semantic commands. The Advanced view passes text literally to the managed pianobar session, never through a shell. It is available only while the widget-managed session is running.
 
 ## Data and security
 
 The password is stored through `secret-tool` in your session's Secret Service collection. Pianobar's `password_command` retrieves it when pianobar starts. The username and other pianobar settings are in `~/.config/pianobar/config` with mode `0600` after account setup. The event bridge writes only song, station, and timing metadata to `$XDG_CACHE_HOME/io.github.nicholasladwig.pianobar-pandora-widget/state.json` (or `~/.cache/...`) with user-only permissions. The plugin never sends account data anywhere except to pianobar and the local Secret Service.
 
-The plugin runs with your user permissions inside the Omarchy shell. Review the source before installation. It uses the normal pianobar process for Pandora traffic and no privileged commands.
+The plugin runs with your user permissions inside the Omarchy shell. Review the source before installation. It uses the normal pianobar process for Pandora traffic. Only the optional package installation requests elevated permission through Polkit; it invokes `/usr/bin/pacman` with a fixed command and missing package names from an allowlist. The package manager does not run during plugin installation, and removing the plugin does not remove system packages.
 
 ## Troubleshooting
 
@@ -77,6 +78,8 @@ omarchy plugin validate .
 qmllint -I "$OMARCHY_PATH/shell" BarWidget.qml Panel.qml
 python3 -m py_compile bridge.py
 ```
+
+The repository includes a temporary `preview.png` supplied by the user; it shows an earlier UI state. Replace it with a current playback screenshot when one is available.
 
 The [Omarchy development guide](https://plugins.omarchy.org/develop.html) defines the Quattro bar widget contract. The [publishing guide](https://plugins.omarchy.org/publish.html) requires a public GitHub repository and a valid manifest. The plugin's [marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/8898) tracks review.
 

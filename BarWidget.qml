@@ -11,6 +11,7 @@ BarWidget {
   property string errorText: ""
   property int tickerOffset: 0
   property string accountPayload: ""
+  property string advancedPayload: ""
   readonly property string trackText: player.running && player.title ? player.artist + " — " + player.title : ""
   readonly property int playingWidth: Math.max(120, Math.min(500, Number(setting("playingWidth", 230)) || 230))
   readonly property bool showElapsed: setting("showElapsed", false) === true
@@ -75,6 +76,21 @@ BarWidget {
     accountProcess.running = true
   }
 
+  function sendAdvanced(text) {
+    if (advancedProcess.running) return
+    errorText = ""
+    advancedPayload = JSON.stringify({ text: text }) + "\n"
+    advancedProcess.command = ["python3", helper, "input"]
+    advancedProcess.running = true
+  }
+
+  function sendSpecialKey(key) {
+    if (controlProcess.running) return
+    errorText = ""
+    controlProcess.command = ["python3", helper, "key", key]
+    controlProcess.running = true
+  }
+
   function runCommand(name) {
     if (controlProcess.running) return
     errorText = ""
@@ -126,6 +142,17 @@ BarWidget {
     stderr: StdioCollector { id: accountError; waitForEnd: true }
     onExited: function(exitCode) {
       if (exitCode !== 0) root.errorText = String(accountError.text || "Could not save account").trim()
+      root.refresh()
+    }
+  }
+
+  Process {
+    id: advancedProcess
+    stdinEnabled: true
+    onStarted: { write(root.advancedPayload); root.advancedPayload = "" }
+    stderr: StdioCollector { id: advancedError; waitForEnd: true }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) root.errorText = String(advancedError.text || "Pianobar input failed").trim()
       root.refresh()
     }
   }

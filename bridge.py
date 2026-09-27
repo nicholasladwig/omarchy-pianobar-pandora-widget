@@ -143,7 +143,9 @@ def status():
     value["elapsed"] = min(duration, int(elapsed)) if duration else int(elapsed)
     value["remaining"] = max(0, duration - value["elapsed"])
     value["total"] = duration
+    value["missingPackages"] = missing_packages()
     value["managed"] = managed_session()
+    value["console"] = console_output() if value["managed"] else ""
     value["configured"] = configured()
     if not running:
         value["title"] = ""
@@ -168,6 +170,68 @@ def config_values():
 def configured():
     values = config_values()
     return bool(values.get("user") and (values.get("password_command") or values.get("password")))
+
+
+def missing_packages():
+    names = {"pianobar": "pianobar", "tmux": "tmux", "secret-tool": "libsecret"}
+    return [package for executable, package in names.items() if not shutil.which(executable)]
+
+
+def install_dependencies():
+    packages = missing_packages()
+    if not packages:
+        return
+    if not shutil.which("pkexec") or not Path("/usr/bin/pacman").exists():
+        raise RuntimeError("Polkit and pacman are required for in-widget installation")
+    try:
+        result = subprocess.run(["pkexec", "/usr/bin/pacman", "-S", "--needed", "--noconfirm", *packages],
+                                capture_output=True, text=True, timeout=900)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Package installation timed out") from None
+    if result.returncode:
+        raise RuntimeError((result.stderr or result.stdout).strip()[-500:] or "Package installation was canceled or failed")
+
+
+def console_output():
+    try:
+        result = subprocess.run(["tmux", "capture-pane", "-p", "-S", "-35", "-t", "=" + SESSION],
+                                capture_output=True, text=True, errors="replace", timeout=2)
+    except subprocess.TimeoutExpired:
+        return ""
+    if result.returncode:
+        return ""
+    # Preserve readable pianobar output without terminal styling/control codes.
+    output = re.sub(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))", "", result.stdout)
+    return output[-7000:].strip()
+
+
+def send_input():
+    if not managed_session():
+        raise RuntimeError("Start pianobar before sending a command")
+    value = json.loads(sys.stdin.readline())
+    answer = str(value.get("text", ""))
+    if len(answer) > 256 or any(ord(c) < 32 or ord(c) == 127 for c in answer):
+        raise RuntimeError("Command input must be one line of at most 256 characters")
+    if answer:
+        result = subprocess.run(["tmux", "send-keys", "-l", "-t", "=" + SESSION, "--", answer],
+                                capture_output=True, text=True)
+        if result.returncode:
+            raise RuntimeError(result.stderr.strip() or "Could not send pianobar input")
+    result = subprocess.run(["tmux", "send-keys", "-t", "=" + SESSION, "Enter"],
+                            capture_output=True, text=True)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or "Could not submit pianobar input")
+
+
+def send_special_key(key):
+    if key not in ("Escape", "Up", "Down", "Tab", "Enter"):
+        raise RuntimeError("Unsupported key")
+    if not managed_session():
+        raise RuntimeError("Start pianobar before sending a key")
+    result = subprocess.run(["tmux", "send-keys", "-t", "=" + SESSION, key],
+                            capture_output=True, text=True)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or "Could not send pianobar key")
 
 
 def managed_session():
@@ -288,8 +352,14 @@ def main():
         save_account()
     elif sys.argv[1] == "start" and len(sys.argv) == 2:
         start()
+    elif sys.argv[1] == "install" and len(sys.argv) == 2:
+        install_dependencies()
     elif sys.argv[1] == "stop" and len(sys.argv) == 2:
         stop()
+    elif sys.argv[1] == "input" and len(sys.argv) == 2:
+        send_input()
+    elif sys.argv[1] == "key" and len(sys.argv) == 3:
+        send_special_key(sys.argv[2])
     elif sys.argv[1] == "control" and len(sys.argv) >= 3:
         action = sys.argv[2]
         if action == "station" and len(sys.argv) == 4:

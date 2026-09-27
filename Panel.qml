@@ -15,6 +15,7 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   property bool showStations: false
   property bool showSettings: false
+  property bool showAdvanced: false
   property bool showAccount: false
   property bool allowConfigChanges: false
   property string username: ""
@@ -55,7 +56,7 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
-      blocked: root.showAccount
+      blocked: root.showAccount || root.showAdvanced
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
 
@@ -81,7 +82,7 @@ Panel {
         }
         Text {
           width: parent.width
-          text: root.player.title || (root.player.running ? "Choose a station below" : "Save your account, then press Play")
+          text: root.player.title || (root.player.missingPackages && root.player.missingPackages.length ? "Install player packages below, then save your account" : (root.player.running ? "Choose a station below" : "Save your account, then press Play"))
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.body
@@ -100,7 +101,8 @@ Panel {
         }
         Row {
           spacing: Style.space(6)
-          PanelActionButton { iconText: "󰐊"; tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
+          PanelActionButton { iconText: "󰐊"; visible: !(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
+          PanelActionButton { iconText: "󰏔"; visible: !!(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Install missing player packages with Polkit"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("install") }
           PanelActionButton { iconText: "󰓛"; tooltipText: "Stop pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
           PanelActionButton { iconText: "󰌆"; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
         }
@@ -236,6 +238,63 @@ Panel {
                 }
               }
             }
+          }
+        }
+        PanelActionButton {
+          iconText: "󰆍"
+          tooltipText: root.showAdvanced ? "Hide pianobar commands" : "Advanced pianobar commands in widget"
+          foreground: root.foreground
+          fontFamily: root.fontFamily
+          onClicked: { root.showAdvanced = !root.showAdvanced; root.showStations = false }
+        }
+        Column {
+          visible: root.showAdvanced
+          width: parent.width
+          spacing: Style.space(6)
+          Text {
+            width: parent.width
+            text: "PIANOBAR COMMANDS · Enter a key or prompt answer below. ? shows help."
+            color: root.foreground
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.bodySmall
+            wrapMode: Text.Wrap
+            textFormat: Text.PlainText
+          }
+          Flickable {
+            id: consoleScroll
+            width: parent.width
+            height: visible ? Style.space(220) : 0
+            contentWidth: width
+            contentHeight: consoleText.implicitHeight
+            clip: true
+            onContentHeightChanged: contentY = Math.max(0, contentHeight - height)
+            Text {
+              id: consoleText
+              width: consoleScroll.width
+              text: root.player.console || "Start pianobar to see its command output"
+              color: root.foreground
+              font.family: "monospace"
+              font.pixelSize: Style.font.bodySmall
+              wrapMode: Text.WrapAnywhere
+              textFormat: Text.PlainText
+            }
+          }
+          TextField {
+            id: commandField
+            width: parent.width
+            placeholderText: "Command key or answer, then Enter"
+            onAccepted: {
+              if (root.hostWidget) root.hostWidget.sendAdvanced(text)
+              text = ""
+            }
+          }
+          Row {
+            spacing: Style.space(6)
+            PanelActionButton { iconText: "?"; tooltipText: "Pianobar help"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendAdvanced("?") }
+            PanelActionButton { iconText: "↑"; tooltipText: "Up"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Up") }
+            PanelActionButton { iconText: "↓"; tooltipText: "Down"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Down") }
+            PanelActionButton { iconText: "↵"; tooltipText: "Enter"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Enter") }
+            PanelActionButton { iconText: "Esc"; tooltipText: "Escape"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.sendSpecialKey("Escape") }
           }
         }
         Text {
