@@ -18,6 +18,7 @@ Panel {
   property bool showAdvanced: false
   property bool showAccount: false
   property bool allowConfigChanges: false
+  property bool confirmAccountRemoval: false
   property string username: ""
   property string password: ""
 
@@ -42,6 +43,21 @@ Panel {
     pwField.text = ""
     showAccount = false
     allowConfigChanges = false
+  }
+  function editAccount() {
+    username = root.player.account || ""
+    showAccount = true
+    allowConfigChanges = false
+    confirmAccountRemoval = false
+  }
+  function removeAccount() {
+    if (!hostWidget) return
+    if (!confirmAccountRemoval) {
+      confirmAccountRemoval = true
+      return
+    }
+    hostWidget.runCommand("remove-account")
+    confirmAccountRemoval = false
   }
 
   KeyboardPanel {
@@ -114,10 +130,12 @@ Panel {
         }
         Row {
           spacing: Style.space(6)
-          PanelActionButton { iconText: "󰐊"; visible: !(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
+          PanelActionButton { iconText: "󰐊"; visible: !root.player.configured && !(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
           PanelActionButton { iconText: "󰏔"; visible: !!(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Install missing player packages with Polkit"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("install") }
-          PanelActionButton { iconText: "󰓛"; tooltipText: "Stop pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
-          PanelActionButton { iconText: "󰌆"; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
+          PanelActionButton { iconText: "󰓛"; visible: !root.player.configured; tooltipText: "Stop pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
+          PanelActionButton { iconText: "󰌆"; visible: !root.player.configured; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
+          PanelActionButton { iconText: "󰏘"; visible: !!root.player.configured; tooltipText: "Edit saved Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.editAccount() }
+          PanelActionButton { iconText: root.confirmAccountRemoval ? "󰄬" : "󰆴"; visible: !!root.player.configured; tooltipText: root.confirmAccountRemoval ? "Click again to remove the saved account and stop Pianobar" : "Remove saved Pandora account"; foreground: root.confirmAccountRemoval ? Color.urgent : root.foreground; fontFamily: root.fontFamily; onClicked: root.removeAccount() }
         }
         Column {
           visible: root.showAccount
@@ -170,7 +188,7 @@ Panel {
         }
         Row {
           spacing: Style.space(6)
-          PanelActionButton { iconText: root.player.paused ? "󰐊" : "󰐎"; tooltipText: root.player.paused ? "Resume playback" : "Pause playback"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("pause") }
+          PanelActionButton { iconText: !root.player.running || root.player.paused ? "󰐊" : "󰐎"; tooltipText: !root.player.running ? "Start playback" : (root.player.paused ? "Resume playback" : "Pause playback"); foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (root.hostWidget) root.hostWidget.togglePlayback() }
           PanelActionButton { iconText: "󰒭"; tooltipText: "Next song"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("next") }
           PanelActionButton { iconText: "󰋑"; tooltipText: "Love song"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("love") }
           PanelActionButton { iconText: "󰂭"; tooltipText: "Ban song"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.action("ban") }

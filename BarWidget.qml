@@ -110,6 +110,11 @@ BarWidget {
     controlProcess.running = true
   }
 
+  function togglePlayback() {
+    if (player.running) control("pause")
+    else runCommand("start")
+  }
+
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
   onBarChanged: injectPanel()
@@ -186,7 +191,7 @@ BarWidget {
     tooltipText: root.trackText || (root.player.running ? "Choose a station" : "Open Pandora widget")
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.LeftButton) root.toggle()
-      else if (buttonCode === Qt.MiddleButton) root.control("pause")
+      else if (buttonCode === Qt.MiddleButton) root.togglePlayback()
       else if (buttonCode === Qt.RightButton) root.openSettings()
     }
   }

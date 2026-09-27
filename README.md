@@ -24,7 +24,9 @@ track time in the player dropdown. Elapsed and remaining time are also enabled
 on the bar by default; right-click settings can change them. Version 1.4.3
 replaces the station icon with a highlighted text button, suppresses Pianobar's
 benign “Everything is fine :)” status, and keeps timing settings in the bar's
-persisted widget entry.
+persisted widget entry. Version 1.4.4 hides the setup Start, Stop, and Save
+buttons after account setup; the play button starts, pauses, or resumes the
+managed player. It adds Edit Account and confirmed Remove Account actions.
 
 To reinstall from a clean plugin checkout:
 
@@ -48,7 +50,7 @@ The widget does not auto-start on login. Click Play in the dropdown when you wan
 ## Controls and settings
 
 - Bar: music note only while idle; music note and slowly scrolling artist and title while playing. Left click opens or closes the player dropdown. Middle click pauses or resumes. Right click opens settings.
-- Player dropdown: Play, Stop, save account, pause or resume, next, love, ban, tired of song for a month, volume down or up, elapsed/remaining/total time, upcoming tracks, and station selection. Select the highlighted **STATIONS** text button to open or close the station list. The widget handles account setup and playback without a terminal.
+- Player dropdown: After initial account setup, it keeps only playback controls, including Play/Pause (which starts the managed player when stopped), next, love, ban, tired of song for a month, volume down or up, elapsed/remaining/total time, upcoming tracks, and station selection. Use Edit Account to change the saved login. Remove Account requires a second click, clears the Secret Service password and login settings, then stops the managed player. Select the highlighted **STATIONS** text button to open or close the station list. The widget handles account setup and playback without a terminal.
 - Advanced pianobar commands: open the command view inside the dropdown to see pianobar's own output and enter its normal command keys or prompt answers. The help button sends `?`; Up, Down, Enter, and Escape controls handle menu navigation. This exposes pianobar's remaining interactive commands without opening a separate terminal.
 - Right-click settings: adjust the minimum playing label width from 120 to 500 px, and separately show or hide elapsed, remaining, and total time on the bar. Elapsed and remaining are enabled by default. The player dropdown always shows elapsed, remaining, and total for the current track. The bar expands if needed to fit enabled clocks. These settings persist in Omarchy's bar configuration.
 
@@ -79,7 +81,7 @@ If Play does not start music, check for an error in the dropdown and choose a st
 omarchy plugin remove io.github.nicholasladwig.pianobar-pandora-widget
 ```
 
-Before removal, click Stop in the player dropdown if pianobar is running. Then remove the plugin's `event_command` and `password_command` lines from `~/.config/pianobar/config` if you do not want them retained. The Secret Service entry is keyed by application `io.github.nicholasladwig.pianobar-pandora-widget` and account username; remove it with `secret-tool clear application io.github.nicholasladwig.pianobar-pandora-widget account YOUR_USERNAME` if desired. Keep the FIFO if another tool uses it. Do not delete your whole pianobar config.
+Before removal, use the player dropdown's Remove Account action if you want to clear the saved login. It requires a second click, stops the managed player, removes `user`, `password`, and `password_command` from `~/.config/pianobar/config`, and clears the Secret Service entry. Then remove the plugin's `event_command` and `fifo` lines from `~/.config/pianobar/config` if you do not want them retained. Keep the FIFO if another tool uses it. Do not delete your whole pianobar config.
 
 ## Development and publication
 

@@ -167,6 +167,7 @@ def status():
     value["managed"] = managed_session()
     value["console"] = console_output() if value["managed"] else ""
     value["configured"] = configured()
+    value["account"] = config_values().get("user", "") if value["configured"] else ""
     if not running:
         value["title"] = ""
         value["upcoming"] = []
@@ -360,6 +361,25 @@ def save_account():
     start()
 
 
+def remove_account():
+    values = config_values()
+    username = values.get("user", "")
+    if not username:
+        raise RuntimeError("No saved Pandora account was found")
+    if not shutil.which("secret-tool"):
+        raise RuntimeError("secret-tool is required to remove the saved password")
+    result = subprocess.run(["secret-tool", "clear", "application", PLUGIN_ID, "account", username],
+                            capture_output=True, text=True, timeout=30)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or "Could not remove the password from Secret Service")
+    try:
+        lines = CONFIG_FILE.read_text().splitlines()
+    except OSError:
+        lines = []
+    stop()
+    write_config(lines, {"user": None, "password": None, "password_command": None})
+
+
 def start():
     if not shutil.which("pianobar") or not shutil.which("tmux"):
         raise RuntimeError("Install pianobar and tmux to play from the widget")
@@ -408,6 +428,8 @@ def main():
         install_dependencies()
     elif sys.argv[1] == "stop" and len(sys.argv) == 2:
         stop()
+    elif sys.argv[1] == "remove-account" and len(sys.argv) == 2:
+        remove_account()
     elif sys.argv[1] == "input" and len(sys.argv) == 2:
         send_input()
     elif sys.argv[1] == "key" and len(sys.argv) == 3:
