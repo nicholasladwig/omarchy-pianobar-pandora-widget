@@ -31,6 +31,7 @@ BarWidget {
   readonly property bool showElapsed: setting("showElapsed", true) === true
   readonly property bool showRemaining: setting("showRemaining", true) === true
   readonly property bool showTotal: setting("showTotal", false) === true
+  readonly property bool pauseScrollAfterFirst: setting("pauseScrollAfterFirst", false) === true
   readonly property int elapsed: Model.elapsedFrom(state, displayNow, environment.running === true)
   readonly property int remaining: Model.remainingFrom(state, displayNow, environment.running === true)
   readonly property int total: Math.max(0, Math.floor(Number(state.durationSeconds) || 0))
@@ -335,13 +336,17 @@ BarWidget {
           textFormat: Text.PlainText
           property bool needsScroll: implicitWidth > scrollClip.width
 
+          onTextChanged: if (root.pauseScrollAfterFirst && trackLabel.implicitWidth > scrollClip.width) scrollAnim.restart()
+
           NumberAnimation on x {
+            id: scrollAnim
             running: trackLabel.needsScroll && !root.opened && !root.vertical
-            loops: Animation.Infinite
+            loops: root.pauseScrollAfterFirst ? 1 : Animation.Infinite
             duration: Math.max(6000, trackLabel.implicitWidth * 25)
             from: scrollClip.width
             to: -trackLabel.implicitWidth
             easing.type: Easing.Linear
+            onFinished: if (root.pauseScrollAfterFirst) trackLabel.x = 0
           }
         }
       }
