@@ -2,6 +2,7 @@
 """Small local bridge from pianobar's event command and control FIFO to Quattro."""
 import errno
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -14,6 +15,7 @@ import sys
 import tempfile
 import time
 import urllib.request
+from urllib.parse import urlparse
 from contextlib import contextmanager
 
 PLUGIN_ID = "io.github.nicholasladwig.pianobar-pandora-widget"
@@ -60,11 +62,18 @@ def read_state():
         return {}
 
 
-def cover_art_path(previous):
-    suffix = Path(previous.get("coverArtPath", "")).suffix if previous.get("coverArtPath") else ".jpg"
-    if suffix.lower() not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+def cover_art_path(url):
+    """Return a per-song cache path so QML does not reuse a stale image.
+
+    QML caches decoded images by URL and filesystem URLs are not watched, so
+    a fixed filename would keep showing the first song's art. Deriving the
+    name from the art URL makes each song load a fresh file.
+    """
+    suffix = Path(urlparse(url).path).suffix.lower()
+    if suffix not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
         suffix = ".jpg"
-    return CACHE / ("cover" + suffix)
+    digest = hashlib.sha1(url.encode("utf-8")).hexdigest()[:16]
+    return CACHE / ("cover-" + digest + suffix)
 
 
 def fetch_cover_art(url, previous):
@@ -77,7 +86,7 @@ def fetch_cover_art(url, previous):
     """
     if not url:
         return ""
-    target = cover_art_path(previous)
+    target = cover_art_path(url)
     try:
         with urllib.request.urlopen(url, timeout=15) as response:
             payload = response.read(10 * 1024 * 1024)
@@ -90,6 +99,12 @@ def fetch_cover_art(url, previous):
         os.chmod(target, 0o600)
     except OSError:
         return ""
+    for stale in CACHE.glob("cover-*"):
+        if stale != target and stale.suffix.lower() in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+            try:
+                stale.unlink()
+            except OSError:
+                pass
     return str(target)
 
 
@@ -508,10 +523,12 @@ def main():
 
 
 def _selfcheck():
-    assert cover_art_path({}).name == "cover.jpg"
-    assert cover_art_path({"coverArtPath": "/tmp/cover.png"}).name == "cover.png"
-    assert cover_art_path({"coverArtPath": "/tmp/cover.exe"}).name == "cover.jpg"
-    assert fetch_cover_art("", {}) == ""
+    assert cover_art_path("http://c/x/1080W_1080H.jpg").suffix == ".jpg"
+    assert cover_art_path("http://c/x/y.png").suffix == ".png"
+    assert cover_art_path("http://c/x/y.bmp").suffix == ".jpg"
+    assert cover_art_path("http://c/x").suffix == ".jpg"
+    assert cover_art_path("http://c/x/a.jpg") != cover_art_path("http://c/x/b.jpg")
+    assert fetch_cover_art("", "") == ""
 
 
 if __name__ == "__main__":
