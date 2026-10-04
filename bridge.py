@@ -2,6 +2,7 @@
 """Small local bridge from pianobar's event command and control FIFO to Quattro."""
 import errno
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,8 @@ import stat
 import sys
 import tempfile
 import time
+import urllib.request
+from urllib.parse import urlparse
 from contextlib import contextmanager
 
 PLUGIN_ID = "io.github.nicholasladwig.pianobar-pandora-widget"
@@ -57,6 +60,52 @@ def read_state():
         return json.loads(STATE.read_text())
     except (OSError, ValueError):
         return {}
+
+
+def cover_art_path(url):
+    """Return a per-song cache path so QML does not reuse a stale image.
+
+    QML caches decoded images by URL and filesystem URLs are not watched, so
+    a fixed filename would keep showing the first song's art. Deriving the
+    name from the art URL makes each song load a fresh file.
+    """
+    suffix = Path(urlparse(url).path).suffix.lower()
+    if suffix not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+        suffix = ".jpg"
+    digest = hashlib.sha1(url.encode("utf-8")).hexdigest()[:16]
+    return CACHE / ("cover-" + digest + suffix)
+
+
+def fetch_cover_art(url, previous):
+    """Download the album art to the cache so QML can read a local file.
+
+    Pandora's image CDN rejects requests that do not pass through the
+    configured proxy, and the Omarchy shell runs without proxy environment
+    variables, so QML's own Image loader cannot reach it. This process
+    inherits the proxy settings (urllib reads them) and can.
+    """
+    if not url:
+        return ""
+    target = cover_art_path(url)
+    try:
+        with urllib.request.urlopen(url, timeout=15) as response:
+            payload = response.read(10 * 1024 * 1024)
+    except (OSError, ValueError):
+        return ""
+    if not payload:
+        return ""
+    try:
+        target.write_bytes(payload)
+        os.chmod(target, 0o600)
+    except OSError:
+        return ""
+    for stale in CACHE.glob("cover-*"):
+        if stale != target and stale.suffix.lower() in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+            try:
+                stale.unlink()
+            except OSError:
+                pass
+    return str(target)
 
 
 @contextmanager
@@ -109,6 +158,8 @@ def event(name):
             "title": data.get("title", "") if has_song and data.get("title") else (previous.get("title", "") if has_song else ""),
             "artist": data.get("artist", "") if has_song and data.get("artist") else (previous.get("artist", "") if has_song else ""),
             "album": data.get("album", "") if has_song and data.get("album") else (previous.get("album", "") if has_song else ""),
+            "coverArt": data.get("coverArt", "") if has_song and data.get("coverArt") else (previous.get("coverArt", "") if has_song else ""),
+            "coverArtPath": fetch_cover_art(data.get("coverArt", ""), previous) if has_song and data.get("coverArt") else (previous.get("coverArtPath", "") if has_song else ""),
             "rating": data.get("rating", "") if has_song else "",
             "upcoming": upcoming if name in ("songstart", "stationfetchplaylist") else (previous.get("upcoming", []) if has_song else []),
             "waitingForStation": name == "usergetstations" or (previous.get("waitingForStation", False) and name not in ("stationfetchplaylist", "songstart")),
@@ -471,7 +522,20 @@ def main():
         raise RuntimeError("Invalid arguments")
 
 
+def _selfcheck():
+    assert cover_art_path("http://c/x/1080W_1080H.jpg").suffix == ".jpg"
+    assert cover_art_path("http://c/x/y.png").suffix == ".png"
+    assert cover_art_path("http://c/x/y.bmp").suffix == ".jpg"
+    assert cover_art_path("http://c/x").suffix == ".jpg"
+    assert cover_art_path("http://c/x/a.jpg") != cover_art_path("http://c/x/b.jpg")
+    assert fetch_cover_art("", "") == ""
+
+
 if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] == "--selfcheck":
+        _selfcheck()
+        print("selfcheck ok")
+        raise SystemExit(0)
     try:
         main()
     except (RuntimeError, OSError, ValueError) as exc:
