@@ -109,6 +109,7 @@ def event(name):
             "title": data.get("title", "") if has_song and data.get("title") else (previous.get("title", "") if has_song else ""),
             "artist": data.get("artist", "") if has_song and data.get("artist") else (previous.get("artist", "") if has_song else ""),
             "album": data.get("album", "") if has_song and data.get("album") else (previous.get("album", "") if has_song else ""),
+            "coverArt": data.get("coverArt", "") if has_song and data.get("coverArt") else (previous.get("coverArt", "") if has_song else ""),
             "rating": data.get("rating", "") if has_song else "",
             "upcoming": upcoming if name in ("songstart", "stationfetchplaylist") else (previous.get("upcoming", []) if has_song else []),
             "waitingForStation": name == "usergetstations" or (previous.get("waitingForStation", False) and name not in ("stationfetchplaylist", "songstart")),

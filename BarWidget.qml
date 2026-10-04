@@ -50,6 +50,9 @@ BarWidget {
     return result
   }
   readonly property string trackText: player.running && player.title ? player.artist + " — " + player.title : ""
+  readonly property string coverArt: player.coverArt || ""
+  readonly property bool hasCoverArt: player.running === true && coverArt !== ""
+  readonly property real iconSize: Style.font.body + Style.space(6)
   readonly property string timeText: {
     if (!trackText) return ""
     var fields = []
@@ -307,20 +310,40 @@ BarWidget {
       anchors.rightMargin: Style.space(8)
       spacing: Style.space(6)
 
-      Text {
-        id: glyph
+      Item {
+        id: icon
+        width: root.iconSize
+        height: root.iconSize
         anchors.verticalCenter: parent.verticalCenter
-        text: "♫"
-        color: root.bar ? root.bar.barForeground : Color.foreground
-        font.family: root.bar ? root.bar.fontFamily : Style.font.family
-        font.pixelSize: Style.font.body
-        textFormat: Text.PlainText
+
+        Text {
+          id: glyph
+          anchors.centerIn: parent
+          text: "♫"
+          visible: !root.hasCoverArt
+          color: root.bar ? root.bar.barForeground : Color.foreground
+          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          font.pixelSize: Style.font.body
+          textFormat: Text.PlainText
+        }
+
+        Image {
+          id: coverIcon
+          anchors.fill: parent
+          visible: root.hasCoverArt
+          source: root.hasCoverArt ? root.coverArt : ""
+          fillMode: Image.PreserveAspectCrop
+          sourceSize.width: Math.round(width * 2)
+          sourceSize.height: Math.round(height * 2)
+          cache: true
+          asynchronous: true
+        }
       }
 
       Item {
         id: scrollClip
-        width: root.trackText && !root.vertical ? Math.max(0, labelRow.width - glyph.implicitWidth - labelRow.spacing - (timeLabel.visible ? timeLabel.implicitWidth + labelRow.spacing : 0)) : 0
-        height: glyph.implicitHeight
+        width: root.trackText && !root.vertical ? Math.max(0, labelRow.width - root.iconSize - labelRow.spacing - (timeLabel.visible ? timeLabel.implicitWidth + labelRow.spacing : 0)) : 0
+        height: root.iconSize
         clip: true
         anchors.verticalCenter: parent.verticalCenter
         visible: !root.vertical && !!root.trackText
