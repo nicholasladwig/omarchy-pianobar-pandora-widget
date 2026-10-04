@@ -92,3 +92,8 @@ The repository's `preview.png` shows the widget during Pandora playback, includi
 The [Omarchy development guide](https://plugins.omarchy.org/develop.html) defines the Quattro bar widget contract. The [publishing guide](https://plugins.omarchy.org/publish.html) requires a public GitHub repository and a valid manifest. The plugin's [marketplace submission](https://github.com/omacom/omarchy-plugin-marketplace/issues/8898) tracks review.
 
 Pianobar's [remote control and event command interface](https://github.com/promyloph/pianobar) supplies the data and controls. Pandora is a trademark of Pandora Media; this project is independent and unaffiliated.
+
+For the planned standalone-player migration, see
+[SELF_CONTAINED_REBUILD.md](SELF_CONTAINED_REBUILD.md). It records the
+Pandora Partner application access required before an official player can be
+implemented.
