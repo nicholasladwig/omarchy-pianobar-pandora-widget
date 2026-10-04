@@ -92,51 +92,71 @@ Panel {
           width: parent.width
           spacing: Style.space(12)
 
-          Image {
+          Item {
             id: coverArt
-            visible: !!root.player.coverArtPath
-            source: root.player.coverArtPath ? "file://" + root.player.coverArtPath : ""
             width: Style.space(88)
             height: width
-            fillMode: Image.PreserveAspectFit
-            sourceSize.width: Math.round(width * 2)
-            sourceSize.height: Math.round(height * 2)
-            cache: true
-            asynchronous: true
-          }
-
-          Column {
-            width: parent.width - (coverArt.visible ? coverArt.width + parent.spacing : 0)
-            spacing: Style.space(4)
 
             Text {
-              width: parent.width
-              text: root.player.running ? (root.player.station || "Pandora") : "Pianobar is not running"
+              anchors.centerIn: parent
+              visible: !coverImage.visible
+              text: "♫"
               color: root.foreground
               font.family: root.fontFamily
               font.pixelSize: Style.font.subtitle
-              font.bold: true
-              elide: Text.ElideRight
               textFormat: Text.PlainText
             }
-            Text {
-              width: parent.width
-              text: root.player.title || (root.player.missingPackages && root.player.missingPackages.length ? "Install the required system packages, then save your account" : (root.player.running ? "Choose a station below" : "Save your account, then press Play"))
-              color: root.foreground
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.body
-              wrapMode: Text.Wrap
-              textFormat: Text.PlainText
+
+            Image {
+              id: coverImage
+              anchors.fill: parent
+              source: root.player.coverArtPath ? "file://" + root.player.coverArtPath : ""
+              fillMode: Image.PreserveAspectCrop
+              sourceSize.width: Math.round(width * 2)
+              sourceSize.height: Math.round(height * 2)
+              cache: true
+              asynchronous: true
             }
-            Text {
+          }
+
+          Item {
+            width: parent.width - coverArt.width - parent.spacing
+            height: coverArt.height
+
+            Column {
+              anchors.verticalCenter: parent.verticalCenter
               width: parent.width
-              visible: !!root.player.artist
-              text: root.player.artist + (root.player.album ? " · " + root.player.album : "")
-              color: Qt.darker(root.foreground, 1.4)
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.bodySmall
-              elide: Text.ElideRight
-              textFormat: Text.PlainText
+              spacing: Style.space(4)
+
+              Text {
+                width: parent.width
+                text: root.player.running ? (root.player.station || "Pandora") : "Pianobar is not running"
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.subtitle
+                font.bold: true
+                elide: Text.ElideRight
+                textFormat: Text.PlainText
+              }
+              Text {
+                width: parent.width
+                text: root.player.title || (root.player.missingPackages && root.player.missingPackages.length ? "Install the required system packages, then save your account" : (root.player.running ? "Choose a station below" : "Save your account, then press Play"))
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.body
+                elide: Text.ElideRight
+                textFormat: Text.PlainText
+              }
+              Text {
+                width: parent.width
+                visible: !!root.player.artist
+                text: root.player.artist + (root.player.album ? " · " + root.player.album : "")
+                color: Qt.darker(root.foreground, 1.4)
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.bodySmall
+                elide: Text.ElideRight
+                textFormat: Text.PlainText
+              }
             }
           }
         }
