@@ -50,7 +50,7 @@ BarWidget {
     return result
   }
   readonly property string trackText: player.running && player.title ? player.artist + " — " + player.title : ""
-  readonly property string coverArt: player.coverArt || ""
+  readonly property string coverArt: player.coverArtPath ? "file://" + player.coverArtPath : ""
   readonly property bool hasCoverArt: player.running === true && coverArt !== ""
   readonly property real iconSize: Style.font.body + Style.space(6)
   readonly property string timeText: {

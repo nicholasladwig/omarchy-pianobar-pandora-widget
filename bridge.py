@@ -13,6 +13,7 @@ import stat
 import sys
 import tempfile
 import time
+import urllib.request
 from contextlib import contextmanager
 
 PLUGIN_ID = "io.github.nicholasladwig.pianobar-pandora-widget"
@@ -57,6 +58,39 @@ def read_state():
         return json.loads(STATE.read_text())
     except (OSError, ValueError):
         return {}
+
+
+def cover_art_path(previous):
+    suffix = Path(previous.get("coverArtPath", "")).suffix if previous.get("coverArtPath") else ".jpg"
+    if suffix.lower() not in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+        suffix = ".jpg"
+    return CACHE / ("cover" + suffix)
+
+
+def fetch_cover_art(url, previous):
+    """Download the album art to the cache so QML can read a local file.
+
+    Pandora's image CDN rejects requests that do not pass through the
+    configured proxy, and the Omarchy shell runs without proxy environment
+    variables, so QML's own Image loader cannot reach it. This process
+    inherits the proxy settings (urllib reads them) and can.
+    """
+    if not url:
+        return ""
+    target = cover_art_path(previous)
+    try:
+        with urllib.request.urlopen(url, timeout=15) as response:
+            payload = response.read(10 * 1024 * 1024)
+    except (OSError, ValueError):
+        return ""
+    if not payload:
+        return ""
+    try:
+        target.write_bytes(payload)
+        os.chmod(target, 0o600)
+    except OSError:
+        return ""
+    return str(target)
 
 
 @contextmanager
@@ -110,6 +144,7 @@ def event(name):
             "artist": data.get("artist", "") if has_song and data.get("artist") else (previous.get("artist", "") if has_song else ""),
             "album": data.get("album", "") if has_song and data.get("album") else (previous.get("album", "") if has_song else ""),
             "coverArt": data.get("coverArt", "") if has_song and data.get("coverArt") else (previous.get("coverArt", "") if has_song else ""),
+            "coverArtPath": fetch_cover_art(data.get("coverArt", ""), previous) if has_song and data.get("coverArt") else (previous.get("coverArtPath", "") if has_song else ""),
             "rating": data.get("rating", "") if has_song else "",
             "upcoming": upcoming if name in ("songstart", "stationfetchplaylist") else (previous.get("upcoming", []) if has_song else []),
             "waitingForStation": name == "usergetstations" or (previous.get("waitingForStation", False) and name not in ("stationfetchplaylist", "songstart")),
@@ -472,7 +507,18 @@ def main():
         raise RuntimeError("Invalid arguments")
 
 
+def _selfcheck():
+    assert cover_art_path({}).name == "cover.jpg"
+    assert cover_art_path({"coverArtPath": "/tmp/cover.png"}).name == "cover.png"
+    assert cover_art_path({"coverArtPath": "/tmp/cover.exe"}).name == "cover.jpg"
+    assert fetch_cover_art("", {}) == ""
+
+
 if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] == "--selfcheck":
+        _selfcheck()
+        print("selfcheck ok")
+        raise SystemExit(0)
     try:
         main()
     except (RuntimeError, OSError, ValueError) as exc:

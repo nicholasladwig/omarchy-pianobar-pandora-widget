@@ -94,8 +94,8 @@ Panel {
 
           Image {
             id: coverArt
-            visible: !!root.player.coverArt
-            source: root.player.coverArt || ""
+            visible: !!root.player.coverArtPath
+            source: root.player.coverArtPath ? "file://" + root.player.coverArtPath : ""
             width: Style.space(88)
             height: width
             fillMode: Image.PreserveAspectFit
