@@ -468,7 +468,8 @@ Panel {
             model: [
               { key: "showElapsed", label: "Elapsed time" },
               { key: "showRemaining", label: "Remaining time" },
-              { key: "showTotal", label: "Total time" }
+              { key: "showTotal", label: "Total time" },
+              { key: "pauseScrollAfterFirst", label: "Pause scroll after one pass" }
             ]
             Rectangle {
               id: settingRow
