@@ -295,7 +295,7 @@ BarWidget {
     bar: root.bar
     text: "♫"
     labelVisible: false
-    fixedWidth: root.vertical ? Style.space(34) : (root.trackText ? Style.space(root.playingWidth) : Style.space(34))
+    fixedWidth: root.vertical ? Style.space(34) : (root.player.running ? Style.space(root.playingWidth) : Style.space(34))
     tooltipText: root.trackText || (root.player.running ? "Choose a station" : "Open Pandora widget")
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.LeftButton) root.toggle()
