@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.3
+
+- Removed the privileged package-installation action so Marketplace standard installation can apply. Missing dependencies are reported without requesting elevation.
+
 ## 1.5.2
 
 - Rechecks the live terminal prompt inside the helper immediately before it reads or sends Advanced text, closing the UI refresh race for password prompts.
@@ -13,7 +17,7 @@
 - Replaced the one-second status subprocess with watched local state, an in-process clock, and low-rate environment checks.
 - Fetches tmux output only while the Advanced panel is open.
 - Uses clipped scene-graph scrolling and supports icon-only vertical bars.
-- Restored Stop playback, shows package names before Polkit installation, and warns about Advanced command secrets.
+- Restored Stop playback, reports missing packages, and warns about Advanced command secrets.
 - Prevents account setup from replacing an existing unreadable Pianobar config.
 - Adds locked state updates, tolerant event number parsing, complete FIFO writes, and a shared JavaScript model.
 

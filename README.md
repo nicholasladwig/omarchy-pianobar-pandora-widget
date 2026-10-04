@@ -10,7 +10,7 @@ Play Pandora from the Omarchy Quattro bar. The widget starts and manages pianoba
 omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-widget.git --enable
 ```
 
-The widget needs Python 3, which is part of a normal Omarchy installation. If `pianobar`, `tmux`, or `libsecret` (which provides `secret-tool`) are missing, an install button appears in the dropdown. Clicking it requests Polkit authorization and installs only the missing packages with pacman. Omarchy's plugin installer itself only clones and enables plugins; it does not run package hooks.
+The widget needs Python 3, which is part of a normal Omarchy installation, plus `pianobar`, `tmux`, and `libsecret` (which provides `secret-tool`). The plugin reports missing packages in its dropdown. Install those dependencies with your normal system package manager, then reopen the widget. Omarchy's plugin installer clones and enables this plugin without requesting elevation or changing system packages.
 
 To update an existing installation:
 
@@ -31,7 +31,7 @@ Removing the plugin does not remove your pianobar configuration or saved Secret 
 
 ## First use
 
-1. Left click the music note to open the dropdown. If an install icon appears, click it and approve the graphical Polkit prompt; the widget installs missing player packages without opening a terminal.
+1. Install the required system packages if the dropdown reports any missing dependencies. Then left click the music note to open the dropdown.
 2. Click the account icon, enter your Pandora username and password, review the config changes, check the consent box, and click the check mark. This saves the password in the desktop Secret Service and starts pianobar without opening a terminal.
 3. If pianobar asks for an initial station, open the station list in the dropdown and select one. Later starts use pianobar's existing station configuration.
 
@@ -58,7 +58,7 @@ error or destructive-action color without changing widget settings.
 
 The password is stored through `secret-tool` in your session's Secret Service collection. Pianobar's `password_command` retrieves it when pianobar starts. The username and other pianobar settings are in `~/.config/pianobar/config` with mode `0600` after account setup. Account setup stops without modifying an existing config that cannot be read. The event bridge writes only song, station, and timing metadata to `$XDG_CACHE_HOME/io.github.nicholasladwig.pianobar-pandora-widget/state.json` (or `~/.cache/...`) with user-only permissions. The plugin never sends account data anywhere except to pianobar and the local Secret Service.
 
-The plugin runs with your user permissions inside the Omarchy shell. Review the source before installation. It uses the normal pianobar process for Pandora traffic. Only the optional package installation requests elevated permission through Polkit; it invokes `/usr/bin/pacman` with a fixed command and missing package names from an allowlist. The package manager does not run during plugin installation, and removing the plugin does not remove system packages.
+The plugin runs with your user permissions inside the Omarchy shell. Review the source before installation. It uses the normal pianobar process for Pandora traffic. Installation and normal operation do not request elevation or change system packages.
 
 ## Troubleshooting
 

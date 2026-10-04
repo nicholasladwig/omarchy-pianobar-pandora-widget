@@ -80,8 +80,6 @@ Verified by reading the shell source, not assumed:
   restricts a plugin to its own bar entry (`shell.qml:649`). Clock and Tray use the same call.
 - Theme binding through `bar.foreground` / `bar.urgent` / `bar.fontFamily` is the documented contract.
 - Security posture of the helper is good and should be kept as-is:
-  - `pkexec /usr/bin/pacman -S --needed --noconfirm <pkgs>` with package names from a **fixed allowlist**,
-    never from user input;
   - the password goes to `secret-tool store` on **stdin**, never argv, and is never written to disk in
     plaintext (an existing plaintext `password =` line is actively removed);
   - every subprocess is an argv list — **no shell anywhere** — and `tmux send-keys -l -t <pane> -- <text>`
@@ -234,9 +232,8 @@ process, and control keys then go to whichever reader wins. `start()` does guard
 (`bridge.py:394-397`), but only at start time. Worth one line in the README's troubleshooting section;
 a runtime check would cost another process per poll and is not worth it.
 
-**Low — `install_dependencies` has no user-visible confirmation beyond the Polkit prompt.** The command
-is fixed and the package list is an allowlist, so the risk is a surprising install, not an arbitrary one.
-Showing the package names in the panel before the Polkit prompt would make the consent honest. ~3 lines.
+**Resolved — system dependency installation.** The widget now only reports missing dependencies. It does
+not invoke a package manager or cross a privilege boundary, which permits standard Marketplace installation.
 
 **Informational — file permissions are the user's whole security boundary.** `~/.config/pianobar/config`
 is written `0600` and the cache dir `0700`, which is right. Note that the plugin sets those modes on the
@@ -276,7 +273,7 @@ math, the ticker math, the action names and the settings clamps are pure functio
 plugin would keep in a `Model.js`. Moving them there is the "rewrite" that actually pays — it deletes
 Python from the per-second path, matches the house style, and makes the logic testable without a
 subprocess. What must stay in Python is the part that genuinely needs care: atomic config rewriting with
-`0600` modes, Secret Service calls, the FIFO, and the Polkit install. Those run on user action, a handful
+`0600` modes, Secret Service calls, and the FIFO. Those run on user action, a handful
 of times per session, where 40 ms is invisible.
 
 One more structural question, answered so it does not get re-litigated: **keep tmux.** It supplies a pty
@@ -313,7 +310,7 @@ Each phase is independently shippable and independently revertable.
 
 **Phase 4 — surface and docs.**
 - Restore a Stop control (or correct the README — pick one).
-- Show package names before the Polkit prompt; add the Advanced-field secret warning.
+- Report missing packages without installing them; add the Advanced-field secret warning.
 - `CHANGELOG.md`; trim the README to current behavior; add the second-instance FIFO note to troubleshooting.
 - Optionally: `barWidget.defaults` + `barWidget.schema` in the manifest. Measured caveat — this shell
   registers that metadata (`shell.qml:1406-1408`) but nothing in it renders a form today, so this is

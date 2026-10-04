@@ -100,7 +100,7 @@ Panel {
         }
         Text {
           width: parent.width
-          text: root.player.title || (root.player.missingPackages && root.player.missingPackages.length ? "Install player packages below, then save your account" : (root.player.running ? "Choose a station below" : "Save your account, then press Play"))
+          text: root.player.title || (root.player.missingPackages && root.player.missingPackages.length ? "Install the required system packages, then save your account" : (root.player.running ? "Choose a station below" : "Save your account, then press Play"))
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.body
@@ -132,7 +132,6 @@ Panel {
         Row {
           spacing: Style.space(6)
           PanelActionButton { iconText: "󰐊"; visible: !root.player.configured && !(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Start pianobar"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("start") }
-          PanelActionButton { iconText: "󰏔"; visible: !!(root.player.missingPackages && root.player.missingPackages.length); tooltipText: "Install missing player packages with Polkit"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("install") }
           PanelActionButton { iconText: "󰓛"; visible: !root.player.configured || (root.player.running && root.player.managed); tooltipText: "Stop playback"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: if (hostWidget) hostWidget.runCommand("stop") }
           PanelActionButton { iconText: "󰌆"; visible: !root.player.configured; tooltipText: "Save Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: { root.showAccount = !root.showAccount; root.allowConfigChanges = false } }
           PanelActionButton { iconText: "󰏘"; visible: !!root.player.configured; tooltipText: "Edit saved Pandora account"; foreground: root.foreground; fontFamily: root.fontFamily; onClicked: root.editAccount() }
@@ -141,7 +140,7 @@ Panel {
         Text {
           width: parent.width
           visible: !!(root.player.missingPackages && root.player.missingPackages.length)
-          text: "Install packages: " + (root.player.missingPackages || []).join(", ") + ". A Polkit prompt will ask for confirmation."
+          text: "Required system packages: " + (root.player.missingPackages || []).join(", ") + ". Install them with your normal package manager, then reopen the widget."
           color: root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.bodySmall

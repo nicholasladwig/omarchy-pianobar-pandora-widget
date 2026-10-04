@@ -228,21 +228,6 @@ def missing_packages():
     return [package for executable, package in names.items() if not shutil.which(executable)]
 
 
-def install_dependencies():
-    packages = missing_packages()
-    if not packages:
-        return
-    if not shutil.which("pkexec") or not Path("/usr/bin/pacman").exists():
-        raise RuntimeError("Polkit and pacman are required for in-widget installation")
-    try:
-        result = subprocess.run(["pkexec", "/usr/bin/pacman", "-S", "--needed", "--noconfirm", *packages],
-                                capture_output=True, text=True, timeout=900)
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("Package installation timed out") from None
-    if result.returncode:
-        raise RuntimeError((result.stderr or result.stdout).strip()[-500:] or "Package installation was canceled or failed")
-
-
 def console_output():
     try:
         result = subprocess.run(["tmux", "capture-pane", "-p", "-S", "-35", "-t", pane_id()],
@@ -457,8 +442,6 @@ def main():
         save_account()
     elif sys.argv[1] == "start" and len(sys.argv) == 2:
         start()
-    elif sys.argv[1] == "install" and len(sys.argv) == 2:
-        install_dependencies()
     elif sys.argv[1] == "stop" and len(sys.argv) == 2:
         stop()
     elif sys.argv[1] == "remove-account" and len(sys.argv) == 2:
