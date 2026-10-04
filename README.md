@@ -6,11 +6,40 @@ Play Pandora from the Omarchy Quattro bar. The widget starts and manages pianoba
 
 ## Install
 
+### One command for Omarchy and Arch Linux
+
+Copy and run this command in a terminal:
+
 ```sh
-omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-widget.git --enable
+sudo pacman -S --needed pianobar tmux libsecret && omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-widget.git --enable --yes
 ```
 
-The widget needs Python 3, which is part of a normal Omarchy installation, plus `pianobar`, `tmux`, and `libsecret` (which provides `secret-tool`). The plugin reports missing packages in its dropdown. Install those dependencies with your normal system package manager, then reopen the widget. Omarchy's plugin installer clones and enables this plugin without requesting elevation or changing system packages.
+It installs the three packages needed by the player, then installs and enables
+the widget. `sudo` is used only by `pacman` to install those system packages;
+the widget itself never requests elevation or installs packages on its own.
+
+### Plugin only
+
+If `pianobar`, `tmux`, and `libsecret` are already installed, use:
+
+```sh
+omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-widget.git --enable --yes
+```
+
+Python 3 is part of a normal Omarchy installation. `libsecret` supplies
+`secret-tool`, which stores the Pandora password in your desktop Secret
+Service. The plugin reports any missing packages in its dropdown. Omarchy's
+plugin installer clones and enables this plugin without requesting elevation or
+changing system packages.
+
+### First launch
+
+1. Find the music note in the bar and left click it.
+2. Select the account icon and enter the Pandora username and password.
+3. Review the configuration change, check the consent box, and save.
+4. Choose a station when prompted, then use Play/Pause to start music.
+
+The player runs in the widget. It does not open a terminal automatically.
 
 To update an existing installation:
 
@@ -29,7 +58,7 @@ omarchy plugin add https://github.com/nicholasladwig/omarchy-pianobar-pandora-wi
 
 Removing the plugin does not remove your pianobar configuration or saved Secret Service password.
 
-## First use
+## Account setup details
 
 1. Install the required system packages if the dropdown reports any missing dependencies. Then left click the music note to open the dropdown.
 2. Click the account icon, enter your Pandora username and password, review the config changes, check the consent box, and click the check mark. This saves the password in the desktop Secret Service and starts pianobar without opening a terminal.
@@ -54,6 +83,20 @@ All player-panel colors use the active Omarchy bar theme. Changing the Omarchy
 theme updates the widget's text, controls, input fields, hover states, and
 error or destructive-action color without changing widget settings.
 
+### Quick-control reference
+
+| Control | Result |
+| --- | --- |
+| Play/Pause | Starts the managed player, pauses it, or resumes it. |
+| Next | Skips to the next song. |
+| Heart | Loves the current song. |
+| Ban | Bans the current song. |
+| Tired | Stops the current song from playing for a month. |
+| Volume buttons | Lowers or raises the player volume. |
+| STATIONS | Shows the station list; choosing one changes stations. |
+| ADVANCED | Shows the player's command output and its command-key input. |
+| Right click | Opens persistent width and bar-time settings. |
+
 ## Data and security
 
 The password is stored through `secret-tool` in your session's Secret Service collection. Pianobar's `password_command` retrieves it when pianobar starts. The username and other pianobar settings are in `~/.config/pianobar/config` with mode `0600` after account setup. Account setup stops without modifying an existing config that cannot be read. The event bridge writes only song, station, and timing metadata to `$XDG_CACHE_HOME/io.github.nicholasladwig.pianobar-pandora-widget/state.json` (or `~/.cache/...`) with user-only permissions. The plugin never sends account data anywhere except to pianobar and the local Secret Service.
@@ -70,6 +113,21 @@ qs log -p "$OMARCHY_PATH/shell" --tail 100
 ```
 
 If Play does not start music, check for an error in the dropdown and choose a station if one is requested. If you previously started pianobar elsewhere, close that process before starting the widget-managed session. A second player can attach to the same control FIFO, so controls can reach the other process; keep one player running. If the secret store is locked, unlock it in your desktop session before saving the account or starting pianobar.
+
+### Common fixes
+
+- **The dropdown says a package is missing:** run the one-command installer in
+  [Install](#install), then reopen the widget.
+- **The music note is present but no music starts:** open the dropdown, confirm
+  the account is saved, choose a station, then select Play/Pause.
+- **The password cannot be saved:** unlock the desktop Secret Service and try
+  Edit Account again. The password is not kept in the plugin repository or
+  written as plaintext to the pianobar config.
+- **Controls affect an unexpected player:** close other independently started
+  pianobar sessions, then use the widget player.
+- **You need a fresh plugin copy:** use the clean reinstall commands in
+  [Install](#install). Saved account data is retained until Remove Account is
+  selected in the widget.
 
 ## Remove
 
